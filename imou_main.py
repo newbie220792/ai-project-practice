@@ -32,8 +32,14 @@ def post_data(data):
         cur = conn.cursor()
         
         cur.execute(
-            "INSERT INTO imou_camera (data) VALUES (%s)",
-            (data,)
+            "INSERT INTO imou_camera (alarm_id, dname, msg_type, thumb_url, data) VALUES (%s, %s, %s, %s, %s)",
+            (
+                data.get("alarm_id"),
+                data.get("dname"),
+                data.get("msg_type"),
+                data.get("thumbUrl"),
+                data
+            )
         )
         
         conn.commit()
