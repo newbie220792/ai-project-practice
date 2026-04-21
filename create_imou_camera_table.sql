@@ -1,7 +1,8 @@
 CREATE USER imou WITH PASSWORD '123456@';
-CREATE DATABASE imou_camera OWNER imou;
+CREATE DATABASE imou_camera;
 GRANT ALL PRIVILEGES ON DATABASE imou_camera TO imou;
 ALTER DATABASE imou_camera OWNER TO imou;
+GRANT ALL ON SCHEMA public TO imou;
 
 create table imou_camera_log (
     id SERIAL PRIMARY KEY,
