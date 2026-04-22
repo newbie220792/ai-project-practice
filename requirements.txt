@@ -1,9 +1,4 @@
-numpy
-pandas
-scikit-learn
-matplotlib
-seaborn
-jupyter
 python-dotenv
 psycopg2
 flask
+opencv-python
