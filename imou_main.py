@@ -1,5 +1,6 @@
+from datetime import datetime
 from email.mime import message
-import time
+# import time
 
 from flask import Flask, jsonify, request, Response
 import psycopg2
@@ -52,7 +53,8 @@ def post_data(data):
             logger.warning(f"Camera {dname} is blacklisted. Skipping save.")
             return jsonify({"status": f"Camera '{dname}' is blacklisted. Skipping save."}), 200
         
-        capture_image_from_camera(did)
+        file_name =  capture_image_from_camera(did)
+        BASE_URL_IMAGE = "http://45.119.85.112:9090/image-imou/img/"
         cur.execute(
             "INSERT INTO imou_camera_log (alarm_id, dname, msg_type, thumb_url, data, created_at, device_id, img) " \
                 "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
@@ -64,7 +66,7 @@ def post_data(data):
                 Json(data),
                 time,
                 did,
-                "http://example.com/default_image.jpg"
+                BASE_URL_IMAGE + file_name
             )
         )
         
@@ -103,10 +105,12 @@ def capture_image_from_camera(camera_id):
     cap = cv2.VideoCapture(url)
     ret, frame = cap.read()
 
-    timestamp = int(time.time())
+    # timestamp = int(time.time())
+    current_date = datetime.datetime.now().strftime('%Y%m%d')
 
     OUTPUT_FOLDER = "/home/rasp/Desktop/imou/capture_imou"
-    filepath = os.path.join(OUTPUT_FOLDER, f"{camera_id}_{timestamp}.jpg")
+    file_name = f"{camera_id}_{current_date}.jpg"
+    filepath = os.path.join(OUTPUT_FOLDER, f"{file_name}")
 
     if ret:
         os.makedirs(OUTPUT_FOLDER, exist_ok=True)
@@ -116,6 +120,7 @@ def capture_image_from_camera(camera_id):
        raise ValueError("Failed to capture image from camera")
 
     cap.release()
+    return file_name
 
 def decrypt(encryptedValue):
     salt = os.getenv("DECRYPT_SALT", "default_salt")
