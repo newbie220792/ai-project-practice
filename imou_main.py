@@ -1,3 +1,4 @@
+from email.mime import message
 import time
 
 from flask import Flask, jsonify, request, Response
@@ -5,9 +6,10 @@ import psycopg2
 import os
 from dotenv import load_dotenv
 from psycopg2.extras import Json
-import requests
 import cv2
 import base64
+from cryptography.fernet import Fernet
+import logger
 
 app = Flask(__name__)
 
@@ -18,12 +20,15 @@ BLACKLIST_CAMERAS = set(['Nhà 2', 'Nhà 1'])  # Danh sách đen để lưu tr�
 @app.route('/callback', methods=['POST','GET', 'PUT', 'DELETE'])
 def callback():
     data = request.json  # nhận JSON từ server gửi tới
-
     return  post_data(data)
     # xử lý logic ở đây
 
 @app.route('/', methods=['GET'])
 def get_data():
+    logger.error("This is an error message from the main app")  # Example of logging an error message
+    logger.warning("This is a warning message from the main app")  # Example of logging a warning
+    logger.info("This is an info message from the main app")  # Example of logging an info message
+    logger.critical("This is a critical message from the main app")  # Example of logging a critical message
     return jsonify({"data": "Hello, World!"})
 
 def post_data(data):
@@ -44,7 +49,7 @@ def post_data(data):
         did = data.get("did");
 
         if dname in BLACKLIST_CAMERAS:
-            print(f"Camera {dname} is blacklisted. Skipping save.")
+            logger.warning(f"Camera {dname} is blacklisted. Skipping save.")
             return jsonify({"status": f"Camera '{dname}' is blacklisted. Skipping save."}), 200
         
         capture_image_from_camera(did)
@@ -69,6 +74,7 @@ def post_data(data):
         return jsonify({"status": "saved"}), 200
     except Exception as e:
         print(str(e));
+        logger.error(f"Error saving data: {str(e)}")  # Log the error message
         return jsonify({"error": str(e)}), 500
 
 def capture_image_from_camera(camera_id):
@@ -92,7 +98,7 @@ def capture_image_from_camera(camera_id):
         raise ValueError("Camera credentials are not set in environment variables")
     
     url = f"rtsp://{username}:{password}@{ip}:554/cam/realmonitor?channel=1&subtype=0"
-    print(f"Connecting to camera at {url}")
+    logger.info(f"Connecting to camera at {url}")  # Log the connection attempt
     
     cap = cv2.VideoCapture(url)
     ret, frame = cap.read()
@@ -106,14 +112,12 @@ def capture_image_from_camera(camera_id):
         os.makedirs(OUTPUT_FOLDER, exist_ok=True)
         cv2.imwrite(filepath, frame)
     else:
+       logger.error(f"Failed to capture image from camera {camera_id} at {url}")  # Log the failure
        raise ValueError("Failed to capture image from camera")
 
     cap.release()
 
 def decrypt(encryptedValue):
-    import base64
-    from cryptography.fernet import Fernet
-
     salt = os.getenv("DECRYPT_SALT", "default_salt")
     decrypted_bytes = base64.b64decode(encryptedValue.encode())
     cipher = Fernet(base64.urlsafe_b64encode(salt.encode().ljust(32)[:32]))
@@ -121,9 +125,6 @@ def decrypt(encryptedValue):
 
 
 def encrypt(plainValue):
-    import base64
-    from cryptography.fernet import Fernet
-
     salt = os.getenv("DECRYPT_SALT", "default_salt")
     cipher = Fernet(base64.urlsafe_b64encode(salt.encode().ljust(32)[:32]))
     encrypted_bytes = cipher.encrypt(plainValue.encode())
