@@ -1,5 +1,4 @@
 from email.mime import message
-import time
 
 from flask import Flask, jsonify, request, Response
 import psycopg2
@@ -9,6 +8,7 @@ from psycopg2.extras import Json
 import cv2
 import base64
 from cryptography.fernet import Fernet
+import datetime
 import logger
 
 app = Flask(__name__)
@@ -16,6 +16,8 @@ app = Flask(__name__)
 load_dotenv()
 
 BLACKLIST_CAMERAS = set(['Nhà 2', 'Nhà 1'])  # Danh sách đen để lưu trữ các IP đã bị chặn
+OUTPUT_FOLDER = os.getenv("OUTPUT_FOLDER", "/home/rasp/Desktop/imou/capture_imou")
+IMAGE_SERVER_URL = os.getenv("IMAGE_SERVER_URL", "http://localhost/img")
 
 @app.route('/callback', methods=['POST','GET', 'PUT', 'DELETE'])
 def callback():
@@ -52,7 +54,8 @@ def post_data(data):
             logger.warning(f"Camera {dname} is blacklisted. Skipping save.")
             return jsonify({"status": f"Camera '{dname}' is blacklisted. Skipping save."}), 200
         
-        capture_image_from_camera(did)
+        fileName = capture_image_from_camera(did)
+        
         cur.execute(
             "INSERT INTO imou_camera_log (alarm_id, dname, msg_type, thumb_url, data, created_at, device_id, img) " \
                 "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
@@ -64,7 +67,7 @@ def post_data(data):
                 Json(data),
                 time,
                 did,
-                "http://example.com/default_image.jpg"
+                f"{IMAGE_SERVER_URL}/{fileName}"
             )
         )
         
@@ -80,14 +83,14 @@ def post_data(data):
 def capture_image_from_camera(camera_id):
     # Define IP mapping for different cameras
     camera_ip = {
-        "A4562BCPSFDFF1A": "192.168.1.225", #cổng
-        "06F2EBDPSF0A55F": "192.168.1.221", #phòng khách
-        "C9804BJPSF67B3E": "192.168.1.102", #phòng ngủ
-        "C9804BJPSF52581": "192.168.1.117", #phòng bếp
-        "C9804BJPSF07E00": "192.168.1.143", #tầng 2
+        "A4562BCPSFDFF1A": {"ip" :"192.168.1.225","location": "gate"}, #cổng
+        "06F2EBDPSF0A55F": {"ip" :"192.168.1.221","location": "living_room"}, #phòng khách
+        "C9804BJPSF67B3E": {"ip" :"192.168.1.102","location": "bedroom"}, #phòng ngủ
+        "C9804BJPSF52581": {"ip" :"192.168.1.117","location": "kitchen"}, #phòng bếp
+        "C9804BJPSF07E00": {"ip" :"192.168.1.143","location": "second_floor"}, #tầng 2
     }
 
-    ip = camera_ip.get(camera_id)  # nếu không có thì dùng luôn IP
+    ip = camera_ip.get(camera_id).get("ip")  # nếu không có thì dùng luôn IP
     if not ip :
         raise ValueError(f"Camera ID '{camera_id}' is not recognized or does not have an associated IP address");
     
@@ -103,10 +106,12 @@ def capture_image_from_camera(camera_id):
     cap = cv2.VideoCapture(url)
     ret, frame = cap.read()
 
-    timestamp = int(time.time())
+    current_date = datetime.datetime.now().strftime('%Y%m%d')
 
-    OUTPUT_FOLDER = "/home/rasp/Desktop/imou/capture_imou"
-    filepath = os.path.join(OUTPUT_FOLDER, f"{camera_id}_{timestamp}.jpg")
+    location = camera_ip.get(camera_id).get("location", "unknown_location")
+    fileName = f"{location}_{current_date}_{camera_id}.jpg"
+
+    filepath = os.path.join(OUTPUT_FOLDER, fileName)
 
     if ret:
         os.makedirs(OUTPUT_FOLDER, exist_ok=True)
@@ -116,6 +121,7 @@ def capture_image_from_camera(camera_id):
        raise ValueError("Failed to capture image from camera")
 
     cap.release()
+    return fileName
 
 def decrypt(encryptedValue):
     salt = os.getenv("DECRYPT_SALT", "default_salt")
