@@ -1,4 +1,3 @@
-from datetime import datetime
 from email.mime import message
 from flask import Flask, jsonify, request, Response
 import psycopg2
@@ -54,8 +53,7 @@ def post_data(data):
             logger.warning(f"Camera {dname} is blacklisted. Skipping save.")
             return jsonify({"status": f"Camera '{dname}' is blacklisted. Skipping save."}), 200
         
-        file_name =  fileName = capture_image_from_camera(did)
-        BASE_URL_IMAGE = "http://45.119.85.112:9090/image-imou/img/"
+        fileName = capture_image_from_camera(did)
         
         cur.execute(
             "INSERT INTO imou_camera_log (alarm_id, dname, msg_type, thumb_url, data, created_at, device_id, img) " \
@@ -99,6 +97,7 @@ def capture_image_from_camera(camera_id):
     password = os.getenv("CAMERA_PASSWORD", "password")
 
     if not username or not password:
+        logger.error("Camera credentials are not set in environment variables")  # Log the error message
         raise ValueError("Camera credentials are not set in environment variables")
     
     url = f"rtsp://{username}:{password}@{ip}:554/cam/realmonitor?channel=1&subtype=0"
@@ -109,7 +108,7 @@ def capture_image_from_camera(camera_id):
 
     current_date = datetime.datetime.now().strftime('%Y%m%d')
 
-    location = camera_ip.get(camera_id).get("location", "unknown_location")
+    location = camera_ip.get(camera_id).get("location", "unknown")
     fileName = f"{location}_{current_date}_{camera_id}.jpg"
 
     filepath = os.path.join(OUTPUT_FOLDER, fileName)
