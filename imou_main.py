@@ -1,5 +1,5 @@
+from datetime import datetime
 from email.mime import message
-
 from flask import Flask, jsonify, request, Response
 import psycopg2
 import os
@@ -54,7 +54,8 @@ def post_data(data):
             logger.warning(f"Camera {dname} is blacklisted. Skipping save.")
             return jsonify({"status": f"Camera '{dname}' is blacklisted. Skipping save."}), 200
         
-        fileName = capture_image_from_camera(did)
+        file_name =  fileName = capture_image_from_camera(did)
+        BASE_URL_IMAGE = "http://45.119.85.112:9090/image-imou/img/"
         
         cur.execute(
             "INSERT INTO imou_camera_log (alarm_id, dname, msg_type, thumb_url, data, created_at, device_id, img) " \
