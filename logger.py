@@ -1,10 +1,18 @@
 import logging
 import datetime
+import os
 
 current_date = datetime.datetime.now().strftime('%Y%m%d')
+log_dir = "/home/rasp/Desktop/imou/logs"
+os.makedirs(log_dir, exist_ok=True)
+
+log_file = os.path.join(log_dir, f"{current_date}_imou.log")
+
+# file_handler = logging.FileHandler(log_file)
+
 # Configure logging to write to a file
 logging.basicConfig(
-    filename=f'logs/{current_date}_imou.log',  # Log file name
+    filename=log_file,  # Log file name
     level=logging.INFO,  # Minimum log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     format='%(asctime)s - %(levelname)s - %(message)s',  # Log message format
     datefmt='%Y-%m-%d %H:%M:%S'  # Date format
@@ -39,6 +47,9 @@ def info(message):
 
 def critical(message):
     _log(message, level='critical')
+
+def set_file_logger(log_file_path):
+    return logging.FileHandler(log_file_path)
 
 # Example usage
 # _log('Application started', 'info')

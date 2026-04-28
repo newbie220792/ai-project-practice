@@ -18,7 +18,7 @@ BLACKLIST_CAMERAS = set(['Nhà 2', 'Nhà 1'])  # Danh sách đen để lưu tr�
 OUTPUT_FOLDER = os.getenv("OUTPUT_FOLDER", "/home/rasp/Desktop/imou/capture_imou")
 IMAGE_SERVER_URL = os.getenv("IMAGE_SERVER_URL", "http://localhost/img")
 
-@app.route('/callback', methods=['POST','GET', 'PUT', 'DELETE'])
+@app.route('/callback', methods=['POST','GET', 'PUT', 'DELETE','OPTIONS'])
 def callback():
     data = request.json  # nhận JSON từ server gửi tới
     return  post_data(data)
@@ -75,7 +75,6 @@ def post_data(data):
         conn.close()
         return jsonify({"status": "saved"}), 200
     except Exception as e:
-        print(str(e));
         logger.error(f"Error saving data: {str(e)}")  # Log the error message
         return jsonify({"error": str(e)}), 500
 
@@ -101,15 +100,15 @@ def capture_image_from_camera(camera_id):
         raise ValueError("Camera credentials are not set in environment variables")
     
     url = f"rtsp://{username}:{password}@{ip}:554/cam/realmonitor?channel=1&subtype=0"
-    logger.info(f"Connecting to camera at {url}")  # Log the connection attempt
+    logger.info(f"Connecting to camera at {ip}")  # Log the connection attempt
     
     cap = cv2.VideoCapture(url)
     ret, frame = cap.read()
 
-    current_date = datetime.datetime.now().strftime('%Y%m%d')
+    current_time = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 
     location = camera_ip.get(camera_id).get("location", "unknown")
-    fileName = f"{location}_{current_date}_{camera_id}.jpg"
+    fileName = f"{location}_{current_time}_{camera_id}.jpg"
 
     filepath = os.path.join(OUTPUT_FOLDER, fileName)
 
@@ -122,6 +121,12 @@ def capture_image_from_camera(camera_id):
 
     cap.release()
     return fileName
+
+def _mask_string(value, visible_chars=4):    
+    """Mask a string showing only the last N characters."""
+    if not value or len(value) <= visible_chars:
+        return "*" * len(value)
+    return "*" * (len(value) - visible_chars) + value[-visible_chars:]
 
 def decrypt(encryptedValue):
     salt = os.getenv("DECRYPT_SALT", "default_salt")
