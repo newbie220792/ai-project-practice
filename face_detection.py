@@ -8,6 +8,7 @@ import datetime
 
 current_date = datetime.datetime.now().strftime('%Y%m%d')
 log_dir = "/home/rasp/Desktop/imou/logs"
+
 os.makedirs(log_dir, exist_ok=True)
 
 log_file = os.path.join(log_dir, f"{current_date}_image.log")
@@ -48,13 +49,16 @@ def _face_recognition(face):
     known_encodings = []
     known_names = []
 
-        # load known faces
-    for file in os.listdir("/home/rasp/Desktop/imou/faces/"):
+    working_dir = os.getenv("WORK_DIR", "/home/rasp/Desktop/imou")
+
+    # load known faces
+    for file in os.listdir(f"{working_dir}/known_faces/"):
         if file is None or file == "" or not file.lower().endswith(('.jpg', '.jpeg', '.png')):
             logger.warning(f"Skipping non-image file: {file}")
             continue
-        img = face_recognition.load_image_file(f"/home/rasp/Desktop/imou/faces/{file}")
+        img = face_recognition.load_image_file(f"{working_dir}/known_faces/{file}")
         enc = face_recognition.face_encodings(img)
+
         if len(enc) == 0:
             logger.warning(f"No face found in {file}, skipping.")
             continue

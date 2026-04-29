@@ -4,3 +4,4 @@ flask
 opencv-python
 datetime
 face_recognition
+svm
