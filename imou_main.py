@@ -8,6 +8,7 @@ import cv2
 import base64
 from cryptography.fernet import Fernet
 import datetime
+from face_recognition_svm_from_image import face_recognition_from_image, load_known_faces
 import logger
 
 app = Flask(__name__)
@@ -17,6 +18,7 @@ load_dotenv()
 BLACKLIST_CAMERAS = set(['Nhà 2', 'Nhà 1'])  # Danh sách đen để lưu trữ các IP đã bị chặn
 OUTPUT_FOLDER = os.getenv("OUTPUT_FOLDER", "/home/rasp/Desktop/imou/capture_imou")
 IMAGE_SERVER_URL = os.getenv("IMAGE_SERVER_URL", "http://localhost/img")
+encodings, names = load_known_faces()
 
 @app.route('/callback', methods=['POST','GET', 'PUT', 'DELETE','OPTIONS'])
 def callback():
@@ -53,11 +55,11 @@ def post_data(data):
             logger.warning(f"Camera {dname} is blacklisted. Skipping save.")
             return jsonify({"status": f"Camera '{dname}' is blacklisted. Skipping save."}), 200
         
-        fileName = capture_image_from_camera(did)
+        fileName, person_name = capture_image_from_camera(did)
         
         cur.execute(
-            "INSERT INTO imou_camera_log (alarm_id, dname, msg_type, thumb_url, data, created_at, device_id, img) " \
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+            "INSERT INTO imou_camera_log (alarm_id, dname, msg_type, thumb_url, data, created_at, device_id, img, person_name) " \
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
             (
                 alarmId,
                 dname,
@@ -66,7 +68,8 @@ def post_data(data):
                 Json(data),
                 time,
                 did,
-                f"{IMAGE_SERVER_URL}/{fileName}"
+                f"{IMAGE_SERVER_URL}/{fileName}",
+                person_name
             )
         )
         
@@ -75,7 +78,7 @@ def post_data(data):
         conn.close()
         return jsonify({"status": "saved"}), 200
     except Exception as e:
-        logger.error(f"Error saving data: {str(e)}")  # Log the error message
+        logger.error(f"Error saving data: {str(e)} with data: {data}")  # Log the error message
         return jsonify({"error": str(e)}), 500
 
 def capture_image_from_camera(camera_id):
@@ -89,6 +92,7 @@ def capture_image_from_camera(camera_id):
     }
 
     ip = camera_ip.get(camera_id).get("ip")  # nếu không có thì dùng luôn IP
+    location = camera_ip.get(camera_id).get("location", "unknown")
     if not ip :
         raise ValueError(f"Camera ID '{camera_id}' is not recognized or does not have an associated IP address");
     
@@ -100,14 +104,13 @@ def capture_image_from_camera(camera_id):
         raise ValueError("Camera credentials are not set in environment variables")
     
     url = f"rtsp://{username}:{password}@{ip}:554/cam/realmonitor?channel=1&subtype=0"
-    logger.info(f"Connecting to camera at {ip}")  # Log the connection attempt
+    logger.info(f"Connecting to camera at {ip} - {location}")  # Log the connection attempt
     
     cap = cv2.VideoCapture(url)
     ret, frame = cap.read()
 
     current_time = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 
-    location = camera_ip.get(camera_id).get("location", "unknown")
     fileName = f"{location}_{current_time}_{camera_id}.jpg"
 
     filepath = os.path.join(OUTPUT_FOLDER, fileName)
@@ -120,7 +123,9 @@ def capture_image_from_camera(camera_id):
        raise ValueError("Failed to capture image from camera")
 
     cap.release()
-    return fileName
+    person_name = face_recognition_from_image(fileName, encodings, names)
+
+    return fileName, person_name
 
 def _mask_string(value, visible_chars=4):    
     """Mask a string showing only the last N characters."""

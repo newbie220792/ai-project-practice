@@ -1,0 +1,31 @@
+{
+  "did": "C9804BJPSF52581",
+  "pid": "W3L9J68E",
+  "time": "20260429T172843",
+  "appId": "lc4ce57c818eaf4d50",
+  "dname": "Phòng bếp",
+  "token": "5392cd5f56404c32bc12ccae48b9c4d8_sd_7",
+  "userId": "36840801",
+  "alarmId": "1183833963579009232",
+  "content": {
+    "event": "33000",
+    "monitor": {
+      "action": 1,
+      "vendor": ["COS", "OSS", "BOS", "US3", "OBS", "TOS"],
+      "channel": 0,
+      "eventId": "13534",
+      "picRatio": {"width": 640, "height": 480},
+      "vendorV3": ["OSS", "OBS", "COS", "US3", "TOS"],
+      "verifierV2": "Qsw5MiUozC88LNUW50IAXkcL+Gb/1g6OK1YW+ediat0="
+    },
+    "localTime": "20260429T172843",
+    "sessionId": "42.117.111.59_11125_10.30.160.154_0_1777060033",
+    "outputData": {}
+  },
+  "msgType": "iotEvent",
+  "utcTime": "20260429T102839",
+  "thumbUrl": "https://imou-sg-ali-online-paas-iot-private-picture.oss-ap-southeast-1.aliyuncs.com/7_msgpic/C9804BJPSF52581_img/Alarm/0/5392cd5f56404c32bc12ccae48b9c4d8_sd_7_0.jpg?Expires=1777544919&OSSAccessKeyId=LTAI5tN6qfjTuSqsdMeunXuA&Signature=wXd6o2oHttRaRXbdEwP%2BRgWSCo8%3D",
+  "picUrlArr": [
+    "https://imou-sg-ali-online-paas-iot-private-picture.oss-ap-southeast-1.aliyuncs.com/7_msgpic/C9804BJPSF52581_img/Alarm/0/5392cd5f56404c32bc12ccae48b9c4d8_sd_7_0.jpg?Expires=1777544919&OSSAccessKeyId=LTAI5tN6qfjTuSqsdMeunXuA&Signature=wXd6o2oHttRaRXbdEwP%2BRgWSCo8%3D"
+  ]
+}
