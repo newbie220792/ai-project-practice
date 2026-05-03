@@ -6,8 +6,9 @@ import os
 import logger
 import datetime
 
+WORKING_DIR = os.getenv("WORK_DIR")
 current_date = datetime.datetime.now().strftime('%Y%m%d')
-log_dir = "/home/rasp/Desktop/imou/logs"
+log_dir = os.path.join(WORKING_DIR, "logs")
 
 os.makedirs(log_dir, exist_ok=True)
 
@@ -49,7 +50,7 @@ def _face_recognition(face):
     known_encodings = []
     known_names = []
 
-    working_dir = os.getenv("WORK_DIR", "/home/rasp/Desktop/imou")
+    working_dir = os.getenv("WORK_DIR")
 
     # load known faces
     for file in os.listdir(f"{working_dir}/known_faces/"):
@@ -84,6 +85,6 @@ def _face_recognition(face):
         cv2.putText(face, name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
 
 if __name__ == "__main__":
-    image_path = '/home/rasp/Desktop/imou/images/living_room_20260428_145439_06F2EBDPSF0A55F.jpg'  # Example image path
-    output_path = '/home/rasp/Desktop/imou/face_detected/detected_faces.jpg'  # Example output path
+    image_path = os.path.join(WORKING_DIR, "images", "living_room_20260428_145439_06F2EBDPSF0A55F.jpg")  # Example image path
+    output_path = os.path.join(WORKING_DIR, "face_detected", "detected_faces.jpg")  # Example output path
     detect_faces(image_path, output_path)

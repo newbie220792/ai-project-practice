@@ -1,5 +1,7 @@
 import shutil
 
+from flask.cli import load_dotenv
+
 import cv2
 
 import face_recognition
@@ -7,11 +9,13 @@ from sklearn import svm
 import os
 import logger
 
+load_dotenv()
+
 def face_recognition_from_image(image, encodings=[], names=[]):
     # encodings = []
     # names = []
     
-    working_dir = os.getenv("WORK_DIR", "/home/rasp/Desktop/imou")
+    working_dir = os.getenv("WORK_DIR")
 
     # Training directory
     # known_faces_dir = os.listdir(f"{working_dir}/known_faces/")
@@ -83,7 +87,7 @@ def face_recognition_from_image(image, encodings=[], names=[]):
 def load_known_faces():
     encodings = []
     names = []
-    working_dir = os.getenv("WORK_DIR", "/home/rasp/Desktop/imou")
+    working_dir = os.getenv("WORK_DIR")
 
     # Training directory
     known_faces_dir = os.listdir(f"{working_dir}/known_faces/")
@@ -110,7 +114,7 @@ def load_known_faces():
     return encodings, names
 
 def _move_file_to_output_folder(fileName):
-    working_dir = os.getenv("WORK_DIR", "/home/rasp/Desktop/imou")
+    working_dir = os.getenv("WORK_DIR")
     source_path = f"{working_dir}/capture_imou/{fileName}"
     OUTPUT_FOLDER =f"{working_dir}/no_faces"
     destination_path = f"{OUTPUT_FOLDER}/{fileName}"

@@ -2,8 +2,13 @@ import logging
 import datetime
 import os
 
+from flask.cli import load_dotenv
+
+load_dotenv()
+
 current_date = datetime.datetime.now().strftime('%Y%m%d')
-log_dir = "/home/rasp/Desktop/imou/logs"
+WORKING_DIR = os.getenv("WORK_DIR")
+log_dir = os.path.join(WORKING_DIR, "logs")
 os.makedirs(log_dir, exist_ok=True)
 
 log_file = os.path.join(log_dir, f"{current_date}_imou.log")

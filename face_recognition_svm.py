@@ -11,7 +11,7 @@ def face_recognition_svm():
     encodings = []
     names = []
     
-    working_dir = os.getenv("WORK_DIR", "/home/rasp/Desktop/imou")
+    working_dir = os.getenv("WORK_DIR")
 
     # Training directory
     known_faces_dir = os.listdir(f"{working_dir}/known_faces/")

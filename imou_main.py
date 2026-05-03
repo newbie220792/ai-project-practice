@@ -16,7 +16,8 @@ app = Flask(__name__)
 load_dotenv()
 
 BLACKLIST_CAMERAS = set(['Nhà 2', 'Nhà 1'])  # Danh sách đen để lưu trữ các IP đã bị chặn
-OUTPUT_FOLDER = os.getenv("OUTPUT_FOLDER", "/home/rasp/Desktop/imou/capture_imou")
+WORKING_DIR = os.getenv("WORK_DIR")
+OUTPUT_FOLDER = os.path.join(WORKING_DIR, "capture_imou")
 IMAGE_SERVER_URL = os.getenv("IMAGE_SERVER_URL", "http://localhost/img")
 encodings, names = load_known_faces()
 
@@ -50,6 +51,11 @@ def post_data(data):
         thumbUrl = data.get("thumbUrl");
         time = data.get("time");
         did = data.get("did");
+        msgType = data.get("msgType");
+
+        if msgType == "mobileDetect":
+            time = _unix_to_iso_compact_tz(int(time), tz_offset_hours=7)  # Convert to ISO format with timezone offset  
+
 
         if dname in BLACKLIST_CAMERAS:
             logger.warning(f"Camera {dname} is blacklisted. Skipping save.")
@@ -145,6 +151,10 @@ def encrypt(plainValue):
     cipher = Fernet(base64.urlsafe_b64encode(salt.encode().ljust(32)[:32]))
     encrypted_bytes = cipher.encrypt(plainValue.encode())
     return base64.b64encode(encrypted_bytes).decode()
+
+def _unix_to_iso_compact_tz(ts: int, tz_offset_hours: int = 0) -> str:
+    tz = datetime.timezone(datetime.timedelta(hours=tz_offset_hours))
+    return datetime.datetime.fromtimestamp(ts, tz).strftime('%Y%m%dT%H%M%S')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=9090)
