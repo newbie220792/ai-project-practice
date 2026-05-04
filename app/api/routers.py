@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from app import logger
-from app.services.imou_main import post_data
+from app.services import post_data
 
 bp = Blueprint("api", __name__)
 

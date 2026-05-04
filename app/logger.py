@@ -4,15 +4,13 @@ import os
 
 from flask.cli import load_dotenv
 
-from app.config.config import WORKING_DIR
+from app.config import WORKING_DIR
 
 current_date = datetime.datetime.now().strftime('%Y%m%d')
 log_dir = os.path.join(WORKING_DIR, "logs")
 os.makedirs(log_dir, exist_ok=True)
 
 log_file = os.path.join(log_dir, f"{current_date}_imou.log")
-
-# file_handler = logging.FileHandler(log_file)
 
 # Configure logging to write to a file
 logging.basicConfig(

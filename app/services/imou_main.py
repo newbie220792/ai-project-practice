@@ -4,7 +4,7 @@ import os
 from psycopg2.extras import Json
 import cv2
 import datetime
-from app.config.config import BLACKLIST_CAMERAS, IMAGE_SERVER_URL, OUTPUT_FOLDER
+from app.config import BLACKLIST_CAMERAS, IMAGE_SERVER_URL, OUTPUT_FOLDER
 from app.services import face_recognition_from_image, load_known_faces
 import app.logger as logger
 from app.utils import _unix_to_iso_compact_tz
@@ -95,18 +95,21 @@ def capture_image_from_camera(camera_id):
 
     filepath = os.path.join(OUTPUT_FOLDER, fileName)
 
+   
+    person_name = "Unknown"
     if ret:
         os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-        cv2.imwrite(filepath, frame)
+
+        encodings, names = load_known_faces()
+        if encodings is None or names is None:
+            logger.warning("No known faces loaded. Skipping face recognition.")
+            return fileName, "Unknown"
+        person_name = face_recognition_from_image(fileName, frame, encodings, names)
     else:
        logger.error(f"Failed to capture image from camera {camera_id} at {url}")  # Log the failure
        raise ValueError("Failed to capture image from camera")
-
+    
     cap.release()
-    encodings, names = load_known_faces()
-    if encodings is None or names is None:
-        logger.warning("No known faces loaded. Skipping face recognition.")
-        return fileName, "Unknown"
-    person_name = face_recognition_from_image(fileName, encodings, names)
-
     return fileName, person_name
+   
+    

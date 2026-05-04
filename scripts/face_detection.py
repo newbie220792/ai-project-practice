@@ -1,7 +1,7 @@
 import sys
 from turtle import home
 import cv2
-from app.config.config import WORKING_DIR
+from app.config import WORKING_DIR
 import face_recognition
 import os
 import app.logger as logger
