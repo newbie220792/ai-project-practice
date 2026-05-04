@@ -3,7 +3,7 @@ from turtle import home
 import cv2
 import face_recognition
 import os
-import logger
+import app.logger as logger
 import datetime
 
 WORKING_DIR = os.getenv("WORK_DIR")

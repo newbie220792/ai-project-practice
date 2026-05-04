@@ -8,8 +8,8 @@ import cv2
 import base64
 from cryptography.fernet import Fernet
 import datetime
-from face_recognition_svm_from_image import face_recognition_from_image, load_known_faces
-import logger
+from app.services.face_recognition_svm_from_image import face_recognition_from_image, load_known_faces
+import app.logger as logger
 
 app = Flask(__name__)
 

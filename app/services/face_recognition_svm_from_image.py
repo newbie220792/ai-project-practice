@@ -7,7 +7,7 @@ import cv2
 import face_recognition
 from sklearn import svm
 import os
-import logger
+import app.logger as logger
 
 load_dotenv()
 
