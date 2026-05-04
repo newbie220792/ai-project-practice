@@ -1,39 +1,13 @@
-from email.mime import message
-from flask import Flask, jsonify, request, Response
+from flask import  jsonify
 import psycopg2
 import os
-from dotenv import load_dotenv
 from psycopg2.extras import Json
 import cv2
-import base64
-from cryptography.fernet import Fernet
 import datetime
-from app.services.face_recognition_svm_from_image import face_recognition_from_image, load_known_faces
+from app.config.config import BLACKLIST_CAMERAS, IMAGE_SERVER_URL, OUTPUT_FOLDER
+from app.services import face_recognition_from_image, load_known_faces
 import app.logger as logger
-
-app = Flask(__name__)
-
-load_dotenv()
-
-BLACKLIST_CAMERAS = set(['Nhà 2', 'Nhà 1'])  # Danh sách đen để lưu trữ các IP đã bị chặn
-WORKING_DIR = os.getenv("WORK_DIR")
-OUTPUT_FOLDER = os.path.join(WORKING_DIR, "capture_imou")
-IMAGE_SERVER_URL = os.getenv("IMAGE_SERVER_URL", "http://localhost/img")
-encodings, names = load_known_faces()
-
-@app.route('/callback', methods=['POST','GET', 'PUT', 'DELETE','OPTIONS'])
-def callback():
-    data = request.json  # nhận JSON từ server gửi tới
-    return  post_data(data)
-    # xử lý logic ở đây
-
-@app.route('/', methods=['GET'])
-def get_data():
-    logger.error("This is an error message from the main app")  # Example of logging an error message
-    logger.warning("This is a warning message from the main app")  # Example of logging a warning
-    logger.info("This is an info message from the main app")  # Example of logging an info message
-    logger.critical("This is a critical message from the main app")  # Example of logging a critical message
-    return jsonify({"data": "Hello, World!"})
+from app.utils import _unix_to_iso_compact_tz
 
 def post_data(data):
     try:
@@ -129,32 +103,10 @@ def capture_image_from_camera(camera_id):
        raise ValueError("Failed to capture image from camera")
 
     cap.release()
+    encodings, names = load_known_faces()
+    if encodings is None or names is None:
+        logger.warning("No known faces loaded. Skipping face recognition.")
+        return fileName, "Unknown"
     person_name = face_recognition_from_image(fileName, encodings, names)
 
     return fileName, person_name
-
-def _mask_string(value, visible_chars=4):    
-    """Mask a string showing only the last N characters."""
-    if not value or len(value) <= visible_chars:
-        return "*" * len(value)
-    return "*" * (len(value) - visible_chars) + value[-visible_chars:]
-
-def decrypt(encryptedValue):
-    salt = os.getenv("DECRYPT_SALT", "default_salt")
-    decrypted_bytes = base64.b64decode(encryptedValue.encode())
-    cipher = Fernet(base64.urlsafe_b64encode(salt.encode().ljust(32)[:32]))
-    return cipher.decrypt(decrypted_bytes).decode()
-
-
-def encrypt(plainValue):
-    salt = os.getenv("DECRYPT_SALT", "default_salt")
-    cipher = Fernet(base64.urlsafe_b64encode(salt.encode().ljust(32)[:32]))
-    encrypted_bytes = cipher.encrypt(plainValue.encode())
-    return base64.b64encode(encrypted_bytes).decode()
-
-def _unix_to_iso_compact_tz(ts: int, tz_offset_hours: int = 0) -> str:
-    tz = datetime.timezone(datetime.timedelta(hours=tz_offset_hours))
-    return datetime.datetime.fromtimestamp(ts, tz).strftime('%Y%m%dT%H%M%S')
-
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=9090)

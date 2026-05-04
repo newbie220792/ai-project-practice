@@ -4,10 +4,9 @@ import os
 
 from flask.cli import load_dotenv
 
-load_dotenv()
+from app.config.config import WORKING_DIR
 
 current_date = datetime.datetime.now().strftime('%Y%m%d')
-WORKING_DIR = os.getenv("WORK_DIR")
 log_dir = os.path.join(WORKING_DIR, "logs")
 os.makedirs(log_dir, exist_ok=True)
 
@@ -52,11 +51,3 @@ def info(message):
 
 def critical(message):
     _log(message, level='critical')
-
-def set_file_logger(log_file_path):
-    return logging.FileHandler(log_file_path)
-
-# Example usage
-# _log('Application started', 'info')
-# _log('This is a warning', 'warning')
-# _log('This is an error', 'error')

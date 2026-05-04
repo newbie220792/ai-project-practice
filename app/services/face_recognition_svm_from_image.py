@@ -1,45 +1,14 @@
 import shutil
-
-from flask.cli import load_dotenv
-
 import cv2
+
+from app.config.config import WORKING_DIR
 
 import face_recognition
 from sklearn import svm
 import os
 import app.logger as logger
 
-load_dotenv()
-
 def face_recognition_from_image(image, encodings=[], names=[]):
-    # encodings = []
-    # names = []
-    
-    working_dir = os.getenv("WORK_DIR")
-
-    # Training directory
-    # known_faces_dir = os.listdir(f"{working_dir}/known_faces/")
-    # Loop through each person in the training directory
-    # for person in known_faces_dir:
-    #     pix = os.listdir(f"{working_dir}/known_faces/{person}")
-
-    #     # Loop through each training image for the current person
-    #     for person_img in pix:
-    #         # Get the face encodings for the face in each image file
-    #         face = face_recognition.load_image_file(f"{working_dir}/known_faces/{person}/{person_img}")
-    #         face_bounding_boxes = face_recognition.face_locations(face)
-
-    #         #If training image contains exactly one face
-    #         if len(face_bounding_boxes) == 1:
-    #             face_enc = face_recognition.face_encodings(face)[0]
-    #             # Add face encoding for current image with corresponding label (name) to the training data
-    #             encodings.append(face_enc)
-    #             names.append(person)
-    #         else:
-    #             logger.warning(f"{person}/{person_img} was skipped and can't be used for training")
-
-    # logger.info("Added encodings for the following people: " + str(set(names)))
-
     # Create and train the SVC classifier
     clf = svm.SVC(gamma='scale')
     clf.fit(encodings,names)
@@ -48,19 +17,19 @@ def face_recognition_from_image(image, encodings=[], names=[]):
         logger.warning(f"Skipping non-image file: {image}")
         return
     else:
-        test_image = face_recognition.load_image_file(f"{working_dir}/capture_imou/{image}")
+        test_image = face_recognition.load_image_file(f"{WORKING_DIR}/capture_imou/{image}")
         # Find all the faces in the test image using the default HOG-based model
         test_bounding_boxes = face_recognition.face_locations(test_image)
 
         no = len(test_bounding_boxes)
         if no == 0:
-            logger.info(f"No faces found in the image: {working_dir}/capture_imou/{image}")
+            logger.info(f"No faces found in the image: {WORKING_DIR}/capture_imou/{image}")
             # Optionally, you can choose to remove the image if no faces are found
-            # os.remove(f"{working_dir}/capture_imou/{image}")
+            # os.remove(f"{WORKING_DIR}/capture_imou/{image}")
             _move_file_to_output_folder(image)
         else: 
             # Predict all the faces in the test image using the trained classifier
-            logger.info(f"Found: {no} faces in the {working_dir}/capture_imou/{image}.")
+            logger.info(f"Found: {no} faces in the {WORKING_DIR}/capture_imou/{image}.")
 
             for i in range(no):
                 test_image_enc = face_recognition.face_encodings(test_image)[i]
@@ -87,18 +56,17 @@ def face_recognition_from_image(image, encodings=[], names=[]):
 def load_known_faces():
     encodings = []
     names = []
-    working_dir = os.getenv("WORK_DIR")
 
     # Training directory
-    known_faces_dir = os.listdir(f"{working_dir}/known_faces/")
+    known_faces_dir = os.listdir(f"{WORKING_DIR}/known_faces/")
     # Loop through each person in the training directory
     for person in known_faces_dir:
-        pix = os.listdir(f"{working_dir}/known_faces/{person}")
+        pix = os.listdir(f"{WORKING_DIR}/known_faces/{person}")
 
         # Loop through each training image for the current person
         for person_img in pix:
             # Get the face encodings for the face in each image file
-            face = face_recognition.load_image_file(f"{working_dir}/known_faces/{person}/{person_img}")
+            face = face_recognition.load_image_file(f"{WORKING_DIR}/known_faces/{person}/{person_img}")
             face_bounding_boxes = face_recognition.face_locations(face)
 
             #If training image contains exactly one face
@@ -114,9 +82,8 @@ def load_known_faces():
     return encodings, names
 
 def _move_file_to_output_folder(fileName):
-    working_dir = os.getenv("WORK_DIR")
-    source_path = f"{working_dir}/capture_imou/{fileName}"
-    OUTPUT_FOLDER =f"{working_dir}/no_faces"
+    source_path = f"{WORKING_DIR}/capture_imou/{fileName}"
+    OUTPUT_FOLDER =f"{WORKING_DIR}/no_faces"
     destination_path = f"{OUTPUT_FOLDER}/{fileName}"
 
     try:
