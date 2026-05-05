@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from app import logger
-from app.services import post_data
+from app.services import face_recognition_using_deep_face, post_data
 
 bp = Blueprint("api", __name__)
 
@@ -8,6 +8,12 @@ bp = Blueprint("api", __name__)
 def callback():
     data = request.json  # nhận JSON từ server gửi tới
     return  post_data(data)
+
+@bp.route('/recognize', methods=['POST'])
+def recognize():
+    if "image" not in request.files:
+        return jsonify({"error": "no image"}), 400
+    return face_recognition_using_deep_face(request.files["image"])
 
 @bp.route('/', methods=['GET'])
 def get_data():

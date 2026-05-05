@@ -5,11 +5,13 @@ from psycopg2.extras import Json
 import cv2
 import datetime
 from app.config import BLACKLIST_CAMERAS, IMAGE_SERVER_URL, OUTPUT_FOLDER
-from app.services import face_recognition_from_image, load_known_faces
+from app.config.config import WORKING_DIR
 import app.logger as logger
 from app.utils import _unix_to_iso_compact_tz
 
-def post_data(data):
+import face_recognition
+
+def post_data(data) -> jsonify:
     try:
         conn = psycopg2.connect(
             host=os.getenv("DB_HOST", "localhost"),
@@ -35,7 +37,7 @@ def post_data(data):
             logger.warning(f"Camera {dname} is blacklisted. Skipping save.")
             return jsonify({"status": f"Camera '{dname}' is blacklisted. Skipping save."}), 200
         
-        fileName, person_name = capture_image_from_camera(did)
+        fileName = capture_image_from_camera(did)
         
         cur.execute(
             "INSERT INTO imou_camera_log (alarm_id, dname, msg_type, thumb_url, data, created_at, device_id, img, person_name) " \
@@ -49,7 +51,7 @@ def post_data(data):
                 time,
                 did,
                 f"{IMAGE_SERVER_URL}/{fileName}",
-                person_name
+                "Unknown"  # Placeholder for person_name, to be updated later after face recognition
             )
         )
         
@@ -61,7 +63,7 @@ def post_data(data):
         logger.error(f"Error saving data: {str(e)} with data: {data}")  # Log the error message
         return jsonify({"error": str(e)}), 500
 
-def capture_image_from_camera(camera_id):
+def capture_image_from_camera(camera_id) -> str:
     # Define IP mapping for different cameras
     camera_ip = {
         "A4562BCPSFDFF1A": {"ip" :"192.168.1.225","location": "gate"}, #cổng
@@ -86,30 +88,39 @@ def capture_image_from_camera(camera_id):
     url = f"rtsp://{username}:{password}@{ip}:554/cam/realmonitor?channel=1&subtype=0"
     logger.info(f"Connecting to camera at {ip} - {location}")  # Log the connection attempt
     
-    cap = cv2.VideoCapture(url)
-    ret, frame = cap.read()
-
     current_time = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 
     fileName = f"{location}_{current_time}_{camera_id}.jpg"
+    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
-    filepath = os.path.join(OUTPUT_FOLDER, fileName)
+    i = 0
+    while i < 5:  # Try to connect and capture for a few times
+        try:
+            cap = cv2.VideoCapture(url)
+            ret, frame = cap.read()
+            if ret:
+                rgb_frame = frame[:, :, ::-1] # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
+                # Find all the faces in the test image using the default HOG-based model
+                test_bounding_boxes = face_recognition.face_locations(rgb_frame)
+            
+                no = len(test_bounding_boxes)
+                if no != 0:
+                    for (top, right, bottom, left) in test_bounding_boxes:
+                        cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
 
-   
-    person_name = "Unknown"
-    if ret:
-        os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-
-        encodings, names = load_known_faces()
-        if encodings is None or names is None:
-            logger.warning("No known faces loaded. Skipping face recognition.")
-            return fileName, "Unknown"
-        person_name = face_recognition_from_image(fileName, frame, encodings, names)
-    else:
-       logger.error(f"Failed to capture image from camera {camera_id} at {url}")  # Log the failure
-       raise ValueError("Failed to capture image from camera")
-    
-    cap.release()
-    return fileName, person_name
+                    cv2.imwrite(f"{WORKING_DIR}/capture_imou/{fileName}", frame)
+                    break  # Successfully captured an image with faces
+                elif i == 4:  # If it's the last attempt and still no faces, save the image to no_faces
+                    cv2.imwrite(f"{WORKING_DIR}/no_faces/{fileName}", frame)
+                else:    
+                    continue  # If no faces detected, try again without saving the image
+            else:
+                logger.warning(f"Attempt {i+1}: Failed to capture image from camera {camera_id} at {url}")  # Log the failure
+        except Exception as e:
+            logger.error(f"Attempt {i+1}: Error connecting to camera {camera_id} at {url} - {str(e)}")  # Log the error message
+        finally:
+            cap.release()  # Ensure the video capture is released
+        i += 1
+    return fileName
    
     

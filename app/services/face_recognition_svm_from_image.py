@@ -8,7 +8,7 @@ from sklearn import svm
 import os
 import app.logger as logger
 
-def face_recognition_from_image(filename, frame, encodings=[], names=[]):
+def face_recognition_from_image(filename, encodings=[], names=[]):
     # Create and train the SVC classifier
     clf = svm.SVC(gamma='scale')
     clf.fit(encodings,names)
@@ -17,25 +17,18 @@ def face_recognition_from_image(filename, frame, encodings=[], names=[]):
         logger.warning(f"Skipping non-image file: {filename}")
         return
     else:
-        # convert BGR -> RGB
-        rgb_frame = frame[:, :, ::-1]
-
         # Find all the faces in the test image using the CNN model instead of the HOG-based model
-        test_bounding_boxes = face_recognition.face_locations(rgb_frame, model='cnn')
+        image_test = face_recognition.load_image_file(f"{WORKING_DIR}/capture_imou/{filename}")
+        test_bounding_boxes = face_recognition.face_locations(image_test)
 
         no = len(test_bounding_boxes)
         person_name = "Unknown"
-        if no == 0:
-            logger.info(f"No faces found in the image: {WORKING_DIR}/capture_imou/{filename}")
-            # Optionally, you can choose to remove the image if no faces are found
-            # os.remove(f"{WORKING_DIR}/capture_imou/{filename}")
-            _move_file_to_output_folder(filename)
-        else: 
+        if no != 0:
             # Predict all the faces in the test image using the trained classifier
             logger.info(f"Found: {no} faces in the {WORKING_DIR}/capture_imou/{filename}.")
 
             for i in range(no):
-                test_image_enc = face_recognition.face_encodings(rgb_frame)[i]
+                test_image_enc = face_recognition.face_encodings(image_test)[i]
 
                 # Predict the name of the person in the test image using the SVM classifier
                 name = clf.predict([test_image_enc])
@@ -56,14 +49,8 @@ def face_recognition_from_image(filename, frame, encodings=[], names=[]):
                             logger.info(f"Recognized face: {person_name}")
                             break
                     logger.warning(f"Unrecognized face: {person_name} using direct comparison.")
-
-            for (top, right, bottom, left) in test_bounding_boxes:
-                cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
-                cv2.putText(frame,person_name,(left + 6, bottom - 6),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255, 255, 255),1)
-
-        # lưu ảnh đã vẽ
-        cv2.imwrite(f"{WORKING_DIR}/capture_imou/{filename}", frame)
-    
+        else: 
+            logger.warning(f"No faces found in the image: {filename}")
     return person_name
 
 def load_known_faces():
