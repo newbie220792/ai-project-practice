@@ -8,6 +8,7 @@ from app.config import BLACKLIST_CAMERAS, IMAGE_SERVER_URL, OUTPUT_FOLDER
 from app.config.config import WORKING_DIR
 import app.logger as logger
 from app.utils import _unix_to_iso_compact_tz
+import time
 
 import face_recognition
 
@@ -67,10 +68,10 @@ def capture_image_from_camera(camera_id) -> str:
     # Define IP mapping for different cameras
     camera_ip = {
         "A4562BCPSFDFF1A": {"ip" :"192.168.1.225","location": "gate"}, #cổng
-        "06F2EBDPSF0A55F": {"ip" :"192.168.1.221","location": "living_room"}, #phòng khách
+        "06F2EBDPSF0A55F": {"ip" :"192.168.1.220","location": "living_room"}, #phòng khách
         "C9804BJPSF67B3E": {"ip" :"192.168.1.102","location": "bedroom"}, #phòng ngủ
-        "C9804BJPSF52581": {"ip" :"192.168.1.117","location": "kitchen"}, #phòng bếp
-        "C9804BJPSF07E00": {"ip" :"192.168.1.143","location": "second_floor"}, #tầng 2
+        "C9804BJPSF52581": {"ip" :"192.168.1.116","location": "kitchen"}, #phòng bếp
+        "C9804BJPSF07E00": {"ip" :"192.168.1.142","location": "second_floor"}, #tầng 2
     }
 
     ip = camera_ip.get(camera_id).get("ip")  # nếu không có thì dùng luôn IP
@@ -94,33 +95,51 @@ def capture_image_from_camera(camera_id) -> str:
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
     i = 0
-    while i < 5:  # Try to connect and capture for a few times
+    cap = None
+    while i < 5:
         try:
             cap = cv2.VideoCapture(url)
-            ret, frame = cap.read()
-            if ret:
-                rgb_frame = frame[:, :, ::-1] # Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
-                # Find all the faces in the test image using the default HOG-based model
-                test_bounding_boxes = face_recognition.face_locations(rgb_frame)
-            
-                no = len(test_bounding_boxes)
-                if no != 0:
-                    for (top, right, bottom, left) in test_bounding_boxes:
-                        cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
 
-                    cv2.imwrite(f"{WORKING_DIR}/capture_imou/{fileName}", frame)
-                    break  # Successfully captured an image with faces
-                elif i == 4:  # If it's the last attempt and still no faces, save the image to no_faces
-                    cv2.imwrite(f"{WORKING_DIR}/no_faces/{fileName}", frame)
-                else:    
-                    continue  # If no faces detected, try again without saving the image
-            else:
-                logger.warning(f"Attempt {i+1}: Failed to capture image from camera {camera_id} at {url}")  # Log the failure
+            if not cap.isOpened():
+                logger.warning(f"Camera not opened: {url}")
+                i += 1
+                time.sleep(1)
+                continue
+
+            ret, frame = cap.read()
+
+            if not ret or frame is None:
+                logger.warning(f"Attempt {i+1}: Failed to read frame")
+                i += 1
+                time.sleep(1)
+                continue
+
+            rgb_frame = frame[:, :, ::-1]
+
+            try:
+                boxes = face_recognition.face_locations(rgb_frame)
+            except Exception as e:
+                logger.error(f"Face detection error: {e}")
+                boxes = []
+
+            if boxes:
+                for (top, right, bottom, left) in boxes:
+                    cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+
+                cv2.imwrite(f"{WORKING_DIR}/capture_imou/{fileName}", frame)
+                break
+            elif i == 4:
+                cv2.imwrite(f"{WORKING_DIR}/no_faces/{fileName}", frame)
+
         except Exception as e:
-            logger.error(f"Attempt {i+1}: Error connecting to camera {camera_id} at {url} - {str(e)}")  # Log the error message
+            logger.error(f"Attempt {i+1}: Error - {e}")
+
         finally:
-            cap.release()  # Ensure the video capture is released
+            if cap is not None:
+                cap.release()
         i += 1
+        time.sleep(1)
+        
     return fileName
    
     
