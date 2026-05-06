@@ -1,7 +1,5 @@
 from app.config.config import WORKING_DIR
-import schedules
 import os
-import time
 import datetime
 
 # Run it in crontab with the following command to clear the no_faces folder every day at midnight:
@@ -51,10 +49,3 @@ def _clear_captured_images():
 def run_scheduler():
     _clear_no_faces()
     _clear_captured_images()
-
-
-schedules.every().day.at("00:00").do(run_scheduler)
-
-while True:
-    schedules.run_pending()
-    time.sleep(1)

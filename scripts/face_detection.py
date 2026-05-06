@@ -82,7 +82,7 @@ def _face_recognition(face):
             first_match_index = matches.index(True)
             name = known_names[first_match_index]
 
-        # cv2.rectangle(face, (left, top), (right, bottom), (0, 255, 0), 2)
+        cv2.rectangle(face, (left, top), (right, bottom), (0, 255, 0), 2)
         cv2.putText(face, name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
 
 if __name__ == "__main__":

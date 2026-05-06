@@ -13,4 +13,5 @@ def callback():
 def recognize():
     data = request.json
     image_name = data.get("image")
-    return face_recognition_using_deep_face(image_name)
+    person_name = face_recognition_using_deep_face(image_name)
+    return jsonify({"name": person_name})

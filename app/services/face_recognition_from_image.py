@@ -1,4 +1,6 @@
+from fileinput import filename
 import shutil
+from tkinter.font import names
 import cv2
 
 from app.config import WORKING_DIR
@@ -31,27 +33,33 @@ def face_recognition_from_image(filename, encodings:list[str]=[], names:list[str
             for i in range(no):
                 test_image_enc = face_recognition.face_encodings(image_test)[i]
 
-                # Predict the name of the person in the test image using the SVM classifier
-                name = clf.predict([test_image_enc])
-                if name != "Unknown" and name is not None and name != "" and len(name) > 0:
-                    logger.info(f"Recognized face: {name}")
-                    person_name = name[0]
-                else:
-                    logger.warning(f"Unrecognized face: {person_name} using SVM classifier, falling back to direct comparison.")
+                for (top, right, bottom, left), face_encoding in zip(test_bounding_boxes, test_image_enc):
+                    matches = face_recognition.compare_faces(encodings, face_encoding)
 
-                # If SVM fails to recognize, try direct comparison as a fallback
+                    logger.info(f"Drawing in the {filename}")
+                    cv2.rectangle(image_test, (left, top), (right, bottom), (0, 255, 0), 2)
+                    
+                    if True in matches:
+                        first_match_index = matches.index(True)
+                        person_name = names[first_match_index]
+                        logger.info(f"Recognized face: {person_name}")
+                        cv2.putText(image_test, person_name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                        break
+
+                # Try SVM to recognize
                 if person_name == "Unknown":
-                    for (top, right, bottom, left), face_encoding in zip(test_bounding_boxes, test_image_enc):
-                        matches = face_recognition.compare_faces(encodings, face_encoding)
-
-                        if True in matches:
-                            first_match_index = matches.index(True)
-                            person_name = names[first_match_index]
-                            logger.info(f"Recognized face: {person_name}")
-                            break
-                    logger.warning(f"Unrecognized face: {person_name} using direct comparison.")
+                     # Predict the name of the person in the test image using the SVM classifier
+                    name = clf.predict([test_image_enc])
+                    if name != "Unknown" and name is not None and name != "" and len(name) > 0:
+                        logger.info(f"Recognized face: {name}")
+                        person_name = name[0]
+                        continue
+                cv2.imwrite(f"{WORKING_DIR}/capture_imou/{filename}", image_test)
+                logger.warning(f"Unrecognized face: {person_name} using direct comparison.")
+                i += 1
         else: 
             logger.warning(f"No faces found in the image: {filename}")
+            os.remove(f"{WORKING_DIR}/capture_imou/{filename}")
     return person_name
 
 def load_known_faces():
