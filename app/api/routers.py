@@ -11,14 +11,6 @@ def callback():
 
 @bp.route('/recognize', methods=['POST'])
 def recognize():
-    if "image" not in request.files:
-        return jsonify({"error": "no image"}), 400
-    return face_recognition_using_deep_face(request.files["image"])
-
-@bp.route('/', methods=['GET'])
-def get_data():
-    logger.error("This is an error message from the main app")  # Example of logging an error message
-    logger.warning("This is a warning message from the main app")  # Example of logging a warning
-    logger.info("This is an info message from the main app")  # Example of logging an info message
-    logger.critical("This is a critical message from the main app")  # Example of logging a critical message
-    return jsonify({"data": "Hello, World!"})
+    data = request.json
+    image_name = data.get("image")
+    return face_recognition_using_deep_face(image_name)

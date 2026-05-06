@@ -8,21 +8,22 @@ from sklearn import svm
 import os
 import app.logger as logger
 
-def face_recognition_from_image(filename, encodings=[], names=[]):
+def face_recognition_from_image(filename, encodings:list[str]=[], names:list[str]=[]) -> str:
     # Create and train the SVC classifier
     clf = svm.SVC(gamma='scale')
     clf.fit(encodings,names)
+    person_name = "Unknown"
 
     if filename is None or filename == "" or not filename.lower().endswith(('.jpg', '.jpeg', '.png')):
         logger.warning(f"Skipping non-image file: {filename}")
-        return
+        return person_name
     else:
         # Find all the faces in the test image using the CNN model instead of the HOG-based model
         image_test = face_recognition.load_image_file(f"{WORKING_DIR}/capture_imou/{filename}")
         test_bounding_boxes = face_recognition.face_locations(image_test)
 
         no = len(test_bounding_boxes)
-        person_name = "Unknown"
+        
         if no != 0:
             # Predict all the faces in the test image using the trained classifier
             logger.info(f"Found: {no} faces in the {WORKING_DIR}/capture_imou/{filename}.")
