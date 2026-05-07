@@ -1,3 +1,4 @@
+from app.services.scan_ip import scan_ip
 from flask import  jsonify
 import psycopg2
 import os
@@ -67,15 +68,16 @@ def post_data(data) -> jsonify:
 def capture_image_from_camera(camera_id) -> str:
     # Define IP mapping for different cameras
     camera_ip = {
-        "A4562BCPSFDFF1A": {"ip" :"192.168.1.225","location": "gate"}, #cổng
-        "06F2EBDPSF0A55F": {"ip" :"192.168.1.220","location": "living_room"}, #phòng khách
-        "C9804BJPSF67B3E": {"ip" :"192.168.1.102","location": "bedroom"}, #phòng ngủ
-        "C9804BJPSF52581": {"ip" :"192.168.1.116","location": "kitchen"}, #phòng bếp
-        "C9804BJPSF07E00": {"ip" :"192.168.1.142","location": "second_floor"}, #tầng 2
+        "A4562BCPSFDFF1A": {"ip" :"192.168.1.225","location": "gate", "mac": "50:3d:d1:e5:e7:50"}, #cổng
+        "06F2EBDPSF0A55F": {"ip" :"192.168.1.220","location": "living_room", "mac": "50:3d:d1:e5:ee:80"}, #phòng khách
+        "C9804BJPSF67B3E": {"ip" :"192.168.1.102","location": "bedroom", "mac": "30:24:50:5e:32:1c"}, #phòng ngủ
+        "C9804BJPSF52581": {"ip" :"192.168.1.116","location": "kitchen", "mac": "30:24:50:5e:31:7e"}, #phòng bếp
+        "C9804BJPSF07E00": {"ip" :"192.168.1.142","location": "second_floor", "mac": "1c:4d:89:cf:ff:c7"}, #tầng 2
     }
 
     ip = camera_ip.get(camera_id).get("ip")  # nếu không có thì dùng luôn IP
     location = camera_ip.get(camera_id).get("location", "unknown")
+    mac = camera_ip.get(camera_id).get("mac", "unknown")
     if not ip :
         raise ValueError(f"Camera ID '{camera_id}' is not recognized or does not have an associated IP address");
     
@@ -101,11 +103,8 @@ def capture_image_from_camera(camera_id) -> str:
             cap = cv2.VideoCapture(url)
 
             if not cap.isOpened():
-                logger.warning(f"Camera not opened: {url}")
-                i += 1
-                time.sleep(1)
-                continue
-
+                raise ConnectionError(f"Failed to connect to camera at {ip} - {location}")
+            
             ret, frame = cap.read()
 
             if not ret or frame is None:
@@ -122,17 +121,20 @@ def capture_image_from_camera(camera_id) -> str:
                 logger.error(f"Face detection error: {e}")
                 boxes = []
 
-            if boxes:
-                for (top, right, bottom, left) in boxes:
-                    cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
-
+            no = len(boxes)
+            if no > 0:
                 cv2.imwrite(f"{WORKING_DIR}/capture_imou/{fileName}", frame)
                 break
             elif i == 4:
                 cv2.imwrite(f"{WORKING_DIR}/no_faces/{fileName}", frame)
 
         except Exception as e:
-            logger.error(f"Attempt {i+1}: Error - {e}")
+            if e is ConnectionError:
+                logger.warning(f"Attempt {i+1}: Connection error - {e}. Retrying...")
+                ip = scan_ip(mac)
+                url = f"rtsp://{username}:{password}@{ip}:554/cam/realmonitor?channel=1&subtype=0"
+            else:
+                logger.error(f"Attempt {i+1}: Error - {e}")
 
         finally:
             if cap is not None:

@@ -13,5 +13,9 @@ def callback():
 def recognize():
     data = request.json
     image_name = data.get("image")
-    person_name = face_recognition_using_deep_face(image_name)
-    return jsonify({"name": person_name})
+    try:
+        person_name = face_recognition_using_deep_face(image_name)
+        return jsonify({"name": person_name})
+    except Exception as e:
+        logger.error(f"Error occurred while recognizing face: {e}")
+        return jsonify({"error": str(e)}), 500  

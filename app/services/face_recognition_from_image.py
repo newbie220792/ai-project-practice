@@ -1,6 +1,8 @@
 from fileinput import filename
 import shutil
 from tkinter.font import names
+from app.config.config import OUTPUT_FOLDER
+from app.services import face_recognition_using_deep_face
 import cv2
 
 from app.config import WORKING_DIR
@@ -20,45 +22,50 @@ def face_recognition_from_image(filename, encodings:list[str]=[], names:list[str
         logger.warning(f"Skipping non-image file: {filename}")
         return person_name
     else:
-        # Find all the faces in the test image using the CNN model instead of the HOG-based model
-        image_test = face_recognition.load_image_file(f"{WORKING_DIR}/capture_imou/{filename}")
-        test_bounding_boxes = face_recognition.face_locations(image_test)
+        try:
+            # Find all the faces in the test image using the CNN model instead of the HOG-based model
+            image_test = face_recognition.load_image_file(f"{WORKING_DIR}/capture_imou/{filename}")
+            test_bounding_boxes = face_recognition.face_locations(image_test)
 
-        no = len(test_bounding_boxes)
-        
-        if no != 0:
-            # Predict all the faces in the test image using the trained classifier
-            logger.info(f"Found: {no} faces in the {WORKING_DIR}/capture_imou/{filename}.")
+            no = len(test_bounding_boxes)
+            
+            if no != 0:
+                # Predict all the faces in the test image using the trained classifier
+                logger.info(f"Found: {no} faces in the {WORKING_DIR}/capture_imou/{filename}.")
 
-            for i in range(no):
-                test_image_enc = face_recognition.face_encodings(image_test)[i]
+                test_image_enc = face_recognition.face_encodings(image_test)
 
                 for (top, right, bottom, left), face_encoding in zip(test_bounding_boxes, test_image_enc):
                     matches = face_recognition.compare_faces(encodings, face_encoding)
-
-                    logger.info(f"Drawing in the {filename}")
+                    person_name = "Unknown"
+                    
                     cv2.rectangle(image_test, (left, top), (right, bottom), (0, 255, 0), 2)
                     
                     if True in matches:
                         first_match_index = matches.index(True)
                         person_name = names[first_match_index]
                         logger.info(f"Recognized face: {person_name}")
-                        cv2.putText(image_test, person_name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-                        break
-
-                # Try SVM to recognize
+                    else: 
+                        # Predict the name of the person in the test image using the SVM classifier
+                        name = clf.predict([face_encoding])
+                        if name and name[0] != "Unknown":
+                            logger.info(f"Recognized face: {name}")
+                            person_name = name[0]
+                
+                # Verify if the person is recognized or not and move the file accordingly
                 if person_name == "Unknown":
-                     # Predict the name of the person in the test image using the SVM classifier
-                    name = clf.predict([test_image_enc])
-                    if name != "Unknown" and name is not None and name != "" and len(name) > 0:
-                        logger.info(f"Recognized face: {name}")
-                        person_name = name[0]
-                        continue
+                    person_name = face_recognition_using_deep_face(filename)
+                    logger.info(f"DeepFace recognition result: {person_name}")
+                
+                cv2.putText(image_test,person_name,(left + 6, bottom - 6),cv2.FONT_HERSHEY_SIMPLEX,0.5,(255, 255, 255),1)
                 cv2.imwrite(f"{WORKING_DIR}/capture_imou/{filename}", image_test)
-                logger.warning(f"Unrecognized face: {person_name} using direct comparison.")
-                i += 1
-        else: 
-            logger.warning(f"No faces found in the image: {filename}")
+                # Move the file to the no_faces folder if no faces were recognized
+                _move_file(filename, "capture_imou", "face_detected")
+            else: 
+                logger.warning(f"No faces found in the image: {filename}")
+                _move_file(filename, "capture_imou", "no_faces")
+        except Exception as e:
+            logger.error(f"Error processing image {filename}: {e}")
             os.remove(f"{WORKING_DIR}/capture_imou/{filename}")
     return person_name
 
@@ -90,13 +97,11 @@ def load_known_faces():
     logger.info("Added encodings for the following people: " + str(set(names)))
     return encodings, names
 
-def _move_file_to_output_folder(fileName):
-    source_path = f"{WORKING_DIR}/capture_imou/{fileName}"
-    OUTPUT_FOLDER =f"{WORKING_DIR}/no_faces"
-    destination_path = f"{OUTPUT_FOLDER}/{fileName}"
+def _move_file(fileName, source_folder, destination_folder):
+    source_path = f"{WORKING_DIR}/{source_folder}/{fileName}"
+    destination_path = f"{WORKING_DIR}/{destination_folder}/{fileName}"
 
     try:
-        os.makedirs(OUTPUT_FOLDER, exist_ok=True)
         shutil.move(source_path, destination_path)
         logger.info(f"Moved file from {source_path} to {destination_path}")
     

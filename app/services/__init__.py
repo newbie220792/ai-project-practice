@@ -1,3 +1,4 @@
 from .face_recognition_from_image import face_recognition_from_image, load_known_faces
 from .imou_main import post_data
 from .face_recognition_using_deep_face import face_recognition_using_deep_face
+from .scan_ip import scan_ip, load_ip

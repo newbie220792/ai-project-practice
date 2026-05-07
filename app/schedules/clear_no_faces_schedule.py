@@ -1,3 +1,4 @@
+from app import logger
 from app.config.config import WORKING_DIR
 import os
 import datetime
@@ -9,26 +10,41 @@ def _is_previous_day(file_path):
     try:
         mtime = os.path.getmtime(file_path)
     except OSError:
-        return False
+        return True  # If the file doesn't exist, consider it as previous day to attempt deletion
 
     file_date = datetime.date.fromtimestamp(mtime)
-    yesterday = datetime.date.today() - datetime.timedelta(days=1)
-    return file_date == yesterday
+    today = datetime.date.today()
+    return file_date < today
 
 def _clear_no_faces():
     no_faces_folder = os.path.join(WORKING_DIR, "no_faces")
-    
+
     if os.path.exists(no_faces_folder):
-        for filename in os.listdir(no_faces_folder):
-            file_path = os.path.join(no_faces_folder, filename)
+        image_files = sorted([
+            f for f in os.listdir(no_faces_folder)
+            if f.endswith(".jpg") or f.endswith(".png")
+        ])
+
+        total_files = len(image_files)
+        if total_files == 0:
+            logger.info("No images to process.")
+            return
+        
+        for index, img_name in enumerate(image_files, start=1):
+            file_path = os.path.join(no_faces_folder, img_name)
             try:
                 if os.path.isfile(file_path) and _is_previous_day(file_path):
                     os.remove(file_path)
-                    print(f"Deleted: {file_path}")
+                    logger.info(
+                        f"Processing image: {img_name} "
+                        f"({index}/{total_files})"
+                    )
             except Exception as e:
-                print(f"Error deleting {file_path}: {e}")
+                logger.error(f"Error deleting {file_path}: {e}")
+                continue
     else:
-        print(f"No 'no_faces' folder found at: {no_faces_folder}")
+        logger.info(f"No 'no_faces' folder found at: {no_faces_folder}")
+        return
 
 def _clear_captured_images():
     captured_images_folder = os.path.join(WORKING_DIR, "capture_imou")
@@ -48,4 +64,4 @@ def _clear_captured_images():
 
 def run_scheduler():
     _clear_no_faces()
-    _clear_captured_images()
+    # _clear_captured_images()
