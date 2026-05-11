@@ -18,4 +18,4 @@ def scan_all_ip()-> dict:
     return ip_dict
 
 def load_ip():
-    return json.load(open("ip_mapping.json", "r"))
+    return json.load(open("etc/ip_mapping.json", "r"))

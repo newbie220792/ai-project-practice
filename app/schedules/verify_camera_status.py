@@ -32,6 +32,6 @@ def verify_camera_status():
             )
     logger.info("Camera status verification completed and updated IP list.")
     
-    with open("ip_mapping.json", "w") as f:
+    with open("etc/ip_mapping.json", "w") as f:
         json.dump(ip_list, f, indent=4)
     return
