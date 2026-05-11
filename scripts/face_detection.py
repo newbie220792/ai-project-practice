@@ -1,12 +1,13 @@
 import sys
 from turtle import home
 import cv2
+from app.config import WORKING_DIR
 import face_recognition
 import os
-import logger
+import app.logger as logger
 import datetime
 
-WORKING_DIR = os.getenv("WORK_DIR")
+# WORKING_DIR = os.getenv("WORK_DIR")
 current_date = datetime.datetime.now().strftime('%Y%m%d')
 log_dir = os.path.join(WORKING_DIR, "logs")
 
@@ -14,7 +15,7 @@ os.makedirs(log_dir, exist_ok=True)
 
 log_file = os.path.join(log_dir, f"{current_date}_image.log")
 
-logger.set_file_logger(log_file)
+# logger.set_file_logger(log_file)
 
 def detect_faces(image_path, output_path=None):
     image = cv2.imread(image_path)
@@ -81,7 +82,7 @@ def _face_recognition(face):
             first_match_index = matches.index(True)
             name = known_names[first_match_index]
 
-        # cv2.rectangle(face, (left, top), (right, bottom), (0, 255, 0), 2)
+        cv2.rectangle(face, (left, top), (right, bottom), (0, 255, 0), 2)
         cv2.putText(face, name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
 
 if __name__ == "__main__":
