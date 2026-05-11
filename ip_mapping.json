@@ -1,32 +1,27 @@
-[
-    {
-        "ip": "192.168.1.225",
-        "location": "gate",
-        "mac": "50:3d:d1:e5:e7:50",
-        "id": "A4562BCPSFDFF1A"
-    },
-    {
-        "ip": "192.168.1.220",
-        "location": "living_room",
-        "mac": "50:3d:d1:e5:ee:80",
-        "id": "06F2EBDPSF0A55F"
-    },
-    {
-        "ip": "192.168.1.102",
-        "location": "bedroom",
-        "mac": "30:24:50:5e:32:1c",
-        "id": "C9804BJPSF67B3E"
-    },
-    {
-        "ip": "192.168.1.116",
-        "location": "kitchen",
-        "mac": "30:24:50:5e:31:7e",
-        "id": "C9804BJPSF52581"
-    },
-    {
-        "ip": "192.168.1.142",
-        "location": "second_floor",
-        "mac": "1c:4d:89:cf:ff:c7",
-        "id": "C9804BJPSF07E00"
-    }
-]
+{
+  "A4562BCPSFDFF1A": {
+    "ip": "192.168.1.225",
+    "location": "gate",
+    "mac": "50:3d:d1:e5:e7:50"
+  },
+  "06F2EBDPSF0A55F": {
+    "ip": "192.168.1.220",
+    "location": "living_room",
+    "mac": "50:3d:d1:e5:ee:80"
+  },
+  "C9804BJPSF67B3E": {
+    "ip": "192.168.1.102",
+    "location": "bedroom",
+    "mac": "30:24:50:5e:32:1c"
+  },
+  "C9804BJPSF52581": {
+    "ip": "192.168.1.116",
+    "location": "kitchen",
+    "mac": "30:24:50:5e:31:7e"
+  },
+  "C9804BJPSF07E00": {
+    "ip": "192.168.1.142",
+    "location": "second_floor",
+    "mac": "1c:4d:89:cf:ff:c7"
+  }
+}

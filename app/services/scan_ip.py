@@ -1,14 +1,9 @@
 import json
 import os
 
-def scan_ip(mac)-> str:
-    output = os.popen(f"sudo arp-scan --localnet | grep -v 'Starting' | grep -v 'Ending'").read()
-    lines = output.splitlines()
-    for line in lines:
-        if mac in line:
-            ip = line.split()[0]
-            return ip
-    raise ValueError(f"IP address for MAC {mac} not found")
+def scan_ip(camera_id)-> str:
+    ip_mapping = load_ip()
+    return ip_mapping.get(camera_id, {}).get("ip")
 
 def scan_all_ip()-> dict:
     output = os.popen(f"sudo arp-scan --localnet | grep -v 'Starting' | grep -v 'Ending'").read()
@@ -22,5 +17,5 @@ def scan_all_ip()-> dict:
             ip_dict[mac] = ip
     return ip_dict
 
-def load_ip() -> dict:
+def load_ip():
     return json.load(open("ip_mapping.json", "r"))

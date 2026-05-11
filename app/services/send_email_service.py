@@ -13,5 +13,3 @@ def send_email(subject, body, to):
             server.sendmail(sender_email, to, message)
     except Exception as e:
         print(f"Failed to send email: {e}") 
-    
-    
