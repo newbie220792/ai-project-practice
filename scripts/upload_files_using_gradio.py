@@ -2,7 +2,7 @@ import gradio as gr
 import shutil
 import os
 
-UPLOAD_DIR = "uploads"
+UPLOAD_DIR = "/media/rasp/D1/imou/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 def save_file(files):
@@ -50,4 +50,4 @@ with gr.Blocks() as demo:
     btn.click(save_file, inputs=files, outputs=[output, files], show_progress="full")
     btnRemove.click(remove_file, inputs=files, outputs=files)
 
-demo.launch()
+demo.launch(server_port=9191, server_name="0.0.0.0", share=True)
