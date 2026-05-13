@@ -5,20 +5,38 @@ import os
 UPLOAD_DIR = "/media/rasp/D1/imou/uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-def save_file(files):
-    if len(files) <= 0: 
-        return
-    saved = []
-
+def save_file(files) -> str:
+    if len(files) <= 0:
+        return 'File is empty', None
+    dst = ''
     for file in files:
-        dst = os.path.join(
-            UPLOAD_DIR,
-            os.path.basename(file.name)
-        )
+        if _is_image(file):
+            dst = os.path.join(
+                UPLOAD_DIR,
+                'images',
+                os.path.basename(file.name)
+            )
+        elif _is_video(file):
+            dst = os.path.join(
+                UPLOAD_DIR,
+                'videos',
+                os.path.basename(file.name)
+            )
+        else:
+            dst = os.path.join(
+                UPLOAD_DIR,
+                'documents',
+                os.path.basename(file.name)
+            )
         shutil.copy(file.name, dst)
-        saved.append(dst)
 
-    return "\n".join(saved), gr.File(value=None)
+    return 'Upload file success!!!', gr.File(value=None)
+
+def _is_image(f:gr.File) -> bool:
+    return f.endswith(".jpg") or f.endswith(".png")
+
+def _is_video(f:gr.File) -> bool:
+    return f.endswith(".mp4") or f.endswith(".")
 
 def remove_file(files):
    for f in files: 
@@ -33,7 +51,7 @@ with gr.Blocks() as demo:
     files = gr.File(file_count="multiple")
     output = gr.Textbox()
 
-    btn = gr.Button(value="Upload",  interactive=False)
+    btn = gr.Button(value="Upload", interactive=False)
     btnRemove = gr.Button(value="Remove")
 
     files.change(
@@ -50,4 +68,4 @@ with gr.Blocks() as demo:
     btn.click(save_file, inputs=files, outputs=[output, files], show_progress="full")
     btnRemove.click(remove_file, inputs=files, outputs=files)
 
-demo.launch(server_port=9191, server_name="0.0.0.0", share=True)
+demo.launch(server_port=9191, server_name="0.0.0.0")
