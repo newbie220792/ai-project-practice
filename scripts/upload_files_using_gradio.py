@@ -68,4 +68,4 @@ with gr.Blocks() as demo:
     btn.click(save_file, inputs=files, outputs=[output, files], show_progress="full")
     btnRemove.click(remove_file, inputs=files, outputs=files)
 
-demo.launch(server_port=9191, server_name="0.0.0.0")
+demo.launch(server_port=9191, server_name="0.0.0.0", root_path='/uploads')
