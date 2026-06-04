@@ -5,3 +5,9 @@ opencv-python
 datetime
 face_recognition
 svm
+gradio
+openmeteo-requests
+requests-cache 
+retry-requests 
+numpy 
+pandas

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Pi Control Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: #e5e7eb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: #020617;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+            width: 300px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        a {
+            display: block;
+            text-decoration: none;
+            color: #fff;
+            background: #2563eb;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 12px 0;
+            transition: background 0.2s;
+            font-size: 16px;
+        }
+
+        a:hover {
+            background: #1d4ed8;
+        }
+
+        .note {
+            font-size: 12px;
+            opacity: 0.6;
+            margin-top: 15px;
+        }
+
+        .upload-img {
+            height: 25px;
+            width: 25px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>📡 Pi Dashboard</h1>
+
+        <a href="/camera">📷 Camera Videos</a>
+        <a href="/admin">🛡 Pi-hole Admin</a>
+        <a href="/motioneye">🎥 MotionEye</a>
+        <a href="/uploads">📤 Uploads</a>
+        <div class="note">
+            Raspberry Pi Control Panel
+        </div>
+    </div>
+
+</body>
+
+</html>

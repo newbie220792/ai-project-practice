@@ -133,6 +133,7 @@ def capture_image_from_camera(camera_id) -> str:
         finally:
             if cap is not None:
                 cap.release()
+            cv2.destroyAllWindows()
         i += 1
         time.sleep(1)
         
