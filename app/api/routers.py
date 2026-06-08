@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from app import logger
 from app.services import face_recognition_using_deep_face, post_data
+from app.services.send_email_service import send_email
 
 bp = Blueprint("api", __name__)
 
@@ -21,7 +22,7 @@ def recognize():
         return jsonify({"error": str(e)}), 500  
     
 @bp.route('/email', methods=['GET', 'POST'])
-def send_email():
+def send_email_service():
     data = request.json
     subject = data.get("subject")
     body = data.get("body")
