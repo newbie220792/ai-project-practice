@@ -1,0 +1,8 @@
+{
+  "email": "dragondaica@gmail.com",
+  "password": "YOUR_APP_PASSWORD",
+  "smtp_server": "smtp.gmail.com",
+  "smtp_port": 465,
+  "imap_server": "imap.gmail.com",
+  "imap_port": 993
+}

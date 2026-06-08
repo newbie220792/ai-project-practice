@@ -23,7 +23,6 @@ client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 client.connect(broker, 1883, 60)
 
 def weather_tracking_schedule():
-    # def weather_tracking_schedule():
     # Make sure all required weather variables are listed here
     # The order of variables in hourly or daily is important to assign them correctly below
     url = "https://api.open-meteo.com/v1/forecast"

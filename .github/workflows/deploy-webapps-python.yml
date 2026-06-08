@@ -25,7 +25,7 @@ env:
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "releases" ]
   workflow_dispatch:
 
 permissions:
@@ -67,9 +67,9 @@ jobs:
       contents: none
     runs-on: ubuntu-latest
     needs: build
-    environment:
-      name: 'Development'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    # environment:
+    #   name: 'develop'
+    #   url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
       - name: Download artifact from build job

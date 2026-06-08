@@ -3,3 +3,4 @@ from .face_recognition_schedule import face_recognition_schedule
 from .verify_camera_status import verify_camera_status
 from .pi_monitoring_schedule import publish_monitoring_data
 from .weather_tracking_schedule import weather_tracking_schedule
+from .verify_hdd_health import verify_hdd_health
