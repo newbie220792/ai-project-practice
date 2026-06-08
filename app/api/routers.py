@@ -19,3 +19,19 @@ def recognize():
     except Exception as e:
         logger.error(f"Error occurred while recognizing face: {e}")
         return jsonify({"error": str(e)}), 500  
+    
+@bp.route('/email', methods=['GET', 'POST'])
+def send_email():
+    data = request.json
+    subject = data.get("subject")
+    body = data.get("body")
+    to = data.get("to")
+    try:
+        send_email(subject, body, to)
+        return jsonify({"message": "Email sent successfully"})
+    except Exception as e:
+        logger.error(f"Error occurred while sending email: {e}")
+        return jsonify({"error": str(e)}), 500      
+    except Exception as e:
+        logger.error(f"Error occurred while recognizing face: {e}")
+        return jsonify({"error": str(e)}), 500  
