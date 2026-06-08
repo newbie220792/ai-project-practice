@@ -2,6 +2,7 @@ import paho.mqtt.client as mqtt
 import psutil
 import time
 import json
+from app import logger
 
 broker = "localhost"
 
@@ -26,4 +27,4 @@ def publish_monitoring_data():
     client.publish("pi/cpu", cpu)
     client.publish("pi/disk", disk)
 
-    print(f"CPU: {cpu}%, Memory: {ram}%, Disk: {disk}%, Temperature: {temp}°C")
+    logger.info(f"CPU: {cpu}%, Memory: {ram}%, Disk: {disk}%, Temperature: {temp}°C")
