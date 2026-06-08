@@ -5,6 +5,7 @@ import requests_cache
 from retry_requests import retry
 import paho.mqtt.client as mqtt
 import json
+from app import logger
 
 
 def load_wmo_codes():
@@ -40,14 +41,14 @@ def weather_tracking_schedule():
 
     # Process current data. The order of variables needs to be the same as requested.
     current = response.Current()
-    current_temperature_2m = current.Variables(0).Value()
-    current_relative_humidity_2m = current.Variables(1).Value()
-    current_rain = current.Variables(2).Value()
+    current_temperature_2m = round(float(current.Variables(0).Value()), 2)
+    current_relative_humidity_2m = round(float(current.Variables(1).Value()), 2)
+    current_rain = round(float(current.Variables(2).Value()), 2)
     current_weather_code = int(current.Variables(3).Value())
 
-    current_cloud_cover = current.Variables(4).Value()
-    current_wind_speed_10m = current.Variables(5).Value()
-    current_apparent_temperature = current.Variables(6).Value()
+    current_cloud_cover = round(float(current.Variables(4).Value()), 2)
+    current_wind_speed_10m = round(float(current.Variables(5).Value()), 2)
+    current_apparent_temperature = round(float(current.Variables(6).Value()), 2)
     current_is_day = int(current.Variables(7).Value())
 
     weather_code_mapping = load_wmo_codes()
@@ -65,3 +66,5 @@ def weather_tracking_schedule():
     client.publish("weather/apparent_temperature", current_apparent_temperature)
     client.publish("weather/is_day", current_is_day)
     client.publish("weather/weather_description", current_weather_time['description'])
+
+    logger.info(f"Temperature: {current_temperature_2m}°C, Humidity: {current_relative_humidity_2m}%, Rain: {current_rain}, Cloud Cover: {current_cloud_cover}%, Wind Speed: {current_wind_speed_10m} m/s, Apparent Temperature: {current_apparent_temperature}°C, Is Day: {current_is_day}")
