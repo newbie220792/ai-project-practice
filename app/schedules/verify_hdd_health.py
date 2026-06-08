@@ -10,7 +10,7 @@ def verify_hdd_health() -> bool:
     # sudo smartctl -a -d sat /dev/sda1 | grep "Reallocated_Sector_Ct"
     #  5 Reallocated_Sector_Ct   0x0033   098   098   036    Pre-fail  Always       -       44
 
-    output = os.popen(f"smartctl -a -d sat /dev/sda1 | grep \"Reallocated_Sector_Ct\"").read()
+    output = os.popen(f"sudo smartctl -a -d sat /dev/sda1 | grep \"Reallocated_Sector_Ct\"").read()
     lines = output.splitlines()
     new_sector = 0
     old_sector = 0
@@ -20,16 +20,28 @@ def verify_hdd_health() -> bool:
             new_sector = int(parts[-1])
     
     with open("reallocated_sector.txt", "r") as f:
-        old_sector = file.load(f)
-        if(new_sector > old_sector):
-            logger.warning("Warning: Reallocated sector count has increased!")
-            file.save(new_sector, f)
-            send_email(
-                subject="HDD Health Alert: Reallocated Sector Count Increased",
-                body="The reallocated sector count of your HDD has increased, which may indicate potential issues with the drive. Please check the HDD health and consider backing up your data.",
-                to="user@example.com"
-            )
-            return False
+        old_sector = int(f.read().strip())
+    
+    logger.info(
+            f"Reallocated sector count: Old: {old_sector}, New: {new_sector}")
+    
+    if(new_sector > old_sector):
+        logger.warning(
+            f"Warning: Reallocated sector count has increased! "
+            f"Old: {old_sector}, New: {new_sector}")
         
-    # return old_sector != 0 and new_sector != 0 and new_sector > old_sector
+        with open("reallocated_sector.txt", "w") as f:
+            f.write(str(new_sector))
+
+        send_email(
+            subject="HDD Health Alert: Reallocated Sector Count Increased",
+            body=(
+                f"The reallocated sector count of your HDD has increased, "
+                f"which may indicate potential issues with the drive.\n\n"
+                f"Old Sector Count: {old_sector}\n"
+                f"New Sector Count: {new_sector}\n\n"
+                f"Please check the HDD health and consider backing up your data."
+            ),
+            to="bavudoan@gmail.com")
+        return False
     return True
