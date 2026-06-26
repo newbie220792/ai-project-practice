@@ -11,22 +11,26 @@ do
 
 MP4="${FILE%.*}.mp4"
 
-# Đã convert rồi
-if [ -f "$MP4" ]; then
+BASENAME=$(basename -- "${FILE%.*}")
+
+# DIR_MOV="$DIR_WORK/inbox/${BASENAME}.MOV"
+DIR_MP4="$DIR_WORK/done/${BASENAME}.mp4"
+
+if [ -f "$DIR_MP4" ]; then
     continue
 fi
 
-BASENAME=$(basename -- "${FILE%.*}")
+if [ ! -f "$FILE" ]; then
+    echo "Missing file: $FILE"
+    continue
+fi
 
-DIR_MOV="$DIR_WORK/inbox/${BASENAME}.mov"
-DIR_MP4="$DIR_WORK/done/${BASENAME}.mp4"
-
-echo "Processing: $FILE"
+echo "FILE=$FILE"
 
 # Convert trên VPS
-nice -n 15 ionice -c3 \
-ffmpeg -y -hide_banner -loglevel error \
-    -i "$DIR_MOV" \
+/usr/local/bin/ffmpeg -nostdin \
+    -y -hide_banner -loglevel error \
+    -i "$FILE" \
     -vf "scale=1920:-2,format=yuv420p" \
     -c:v libx264 \
     -preset veryfast \
@@ -37,13 +41,10 @@ ffmpeg -y -hide_banner -loglevel error \
     "$DIR_MP4"
 
 if [ $? -eq 0 ]; then
-    if [ $? -eq 0 ]; then
-        touch -r "$FILE" "$MP4"
-        echo "Success: $MP4"
-        PROCESSED=$((PROCESSED + 1))
-        # Nếu muốn xóa MOV gốc:
-        # rm -f "$FILE"
-    fi
+    touch -r "$FILE" "$DIR_MP4"
+    echo "Success: $DIR_MP4"
+    PROCESSED=$((PROCESSED + 1))
+    rm -f "$FILE"
 else
     echo "Convert failed: $FILE"
 fi
