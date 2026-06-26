@@ -1,5 +1,13 @@
 #!/bin/bash
 
+LOCKFILE="/var/run/convert_mov.lock"
+
+exec 200>"$LOCKFILE"
+flock -n 200 || {
+    echo "$(date): Another instance is running."
+    exit 0
+}
+
 DIR_WORK="/root/wso2/convert"
 LIMIT=1
 
@@ -53,4 +61,4 @@ done < <(
     find "$DIR_WORK/inbox" -type f \( -iname "*.MOV" -o -iname "*.mov" \)
 )
 
-echo "Processed: $PROCESSED file(s)"
+echo "$(date): Processed: $PROCESSED file(s)"
