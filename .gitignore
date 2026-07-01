@@ -1,0 +1,12 @@
+logs/
+no_faces/
+uploads/
+known_faces/
+face_detected/
+capture_imou/
+.env
+.cache.sqlite
+email_info.json
+ip_mapping.json
+.gradio/
+.DS_Store
