@@ -14,29 +14,28 @@ import face_recognition
 
 def post_data(data) -> jsonify:
     try:
+        dname= data.get("dname");
+        if dname in BLACKLIST_CAMERAS:
+            logger.warning(f"Camera {dname} is blacklisted. Skipping save.")
+            return jsonify({"status": f"Camera '{dname}' is blacklisted. Skipping save."}), 200
+        
+        msgType = data.get("msgType");
+        if msgType == "mobileDetect":
+            # time = _unix_to_iso_compact_tz(int(time), tz_offset_hours=7)  # Convert to ISO format with timezone offset  
+            return jsonify({"status": "mobileDetect received, no image capture needed"}), 200
+        
+        alarmId= data.get("alarmId");
+        thumbUrl = data.get("thumbUrl");
+        time = data.get("time");
+        did = data.get("did");
+
+        fileName = capture_image_from_camera(did)
+
         conn = initialize_mysql_connection()
         if(conn is None):
             logger.error("Failed to connect to MySQL database")
             return jsonify({"error": "Failed to connect to MySQL database"}), 500
         cur = conn.cursor()
-
-        alarmId= data.get("alarmId");
-        dname= data.get("dname");
-        msgType = data.get("msgType");
-        thumbUrl = data.get("thumbUrl");
-        time = data.get("time");
-        did = data.get("did");
-        msgType = data.get("msgType");
-
-        if msgType == "mobileDetect":
-            # time = _unix_to_iso_compact_tz(int(time), tz_offset_hours=7)  # Convert to ISO format with timezone offset  
-            return jsonify({"status": "mobileDetect received, no image capture needed"}), 200
-
-        if dname in BLACKLIST_CAMERAS:
-            logger.warning(f"Camera {dname} is blacklisted. Skipping save.")
-            return jsonify({"status": f"Camera '{dname}' is blacklisted. Skipping save."}), 200
-        
-        fileName = capture_image_from_camera(did)
         
         cur.execute(
             "INSERT INTO imou_camera_log (alarm_id, dname, msg_type, thumb_url, data, created_at, device_id, img, person_name) " \
