@@ -10,7 +10,7 @@ def verify_hdd_health() -> bool:
     # sudo smartctl -a -d sat /dev/sda1 | grep "Reallocated_Sector_Ct"
     #  5 Reallocated_Sector_Ct   0x0033   098   098   036    Pre-fail  Always       -       44
 
-    output = os.popen(f"sudo smartctl -a -d sat /dev/sda1 | grep \"Reallocated_Sector_Ct\"").read()
+    output = os.popen(f"sudo smartctl -a -d sat /dev/sda | grep \"Reallocated_Sector_Ct\"").read()
     lines = output.splitlines()
     new_sector = 0
     old_sector = 0

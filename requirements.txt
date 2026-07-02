@@ -12,3 +12,4 @@ retry-requests
 numpy 
 pandas
 pillow
+mysql-connector-python

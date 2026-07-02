@@ -209,3 +209,10 @@ __marimo__/
 logs/
 .vscode/
 uploads/
+.cache.sqlite
+face_detected/
+known_faces/
+.DS_Store
+.env
+email_info.json
+ip_mapping.json

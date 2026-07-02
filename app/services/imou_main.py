@@ -1,12 +1,11 @@
+from app.config.mysql_config import initialize_mysql_connection
 from app.services.scan_ip import load_ip, scan_ip
 from flask import  jsonify
-import psycopg2
 import os
-from psycopg2.extras import Json
 import cv2
 import datetime
-from app.config import BLACKLIST_CAMERAS, IMAGE_SERVER_URL, OUTPUT_FOLDER
-from app.config.config import WORKING_DIR
+import json
+from app.config import BLACKLIST_CAMERAS, IMAGE_SERVER_URL, OUTPUT_FOLDER,CAMERA_PASSWORD, CAMERA_USERNAME, WORKING_DIR
 import app.logger as logger
 from app.utils import _unix_to_iso_compact_tz
 import time
@@ -15,12 +14,10 @@ import face_recognition
 
 def post_data(data) -> jsonify:
     try:
-        conn = psycopg2.connect(
-            host=os.getenv("DB_HOST", "localhost"),
-            database=os.getenv("DB_NAME"),
-            user=os.getenv("DB_USER"),
-            password=os.getenv("DB_PASSWORD")
-        )
+        conn = initialize_mysql_connection()
+        if(conn is None):
+            logger.error("Failed to connect to MySQL database")
+            return jsonify({"error": "Failed to connect to MySQL database"}), 500
         cur = conn.cursor()
 
         alarmId= data.get("alarmId");
@@ -49,7 +46,7 @@ def post_data(data) -> jsonify:
                 dname,
                 msgType,
                 thumbUrl,
-                Json(data),
+                json.dumps(data),
                 time,
                 did,
                 f"{IMAGE_SERVER_URL}/{fileName}",
@@ -75,8 +72,8 @@ def capture_image_from_camera(camera_id) -> str:
     if not ip :
         raise ValueError(f"Camera ID '{camera_id}' is not recognized or does not have an associated IP address");
     
-    username = os.getenv("CAMERA_USERNAME", "admin")
-    password = os.getenv("CAMERA_PASSWORD", "password")
+    username = CAMERA_USERNAME
+    password = CAMERA_PASSWORD
 
     if not username or not password:
         logger.error("Camera credentials are not set in environment variables")  # Log the error message

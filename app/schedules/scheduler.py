@@ -12,7 +12,7 @@ def start():
         scheduler.add_job(clear_no_faces_schedule, 'cron', hour=0, minute=5, max_instances=1)
         scheduler.add_job(verify_camera_status, 'interval', hours=1, max_instances=1)
         scheduler.add_job(publish_monitoring_data, 'interval', seconds=3, max_instances=1)
-        scheduler.add_job(weather_tracking_schedule, 'interval', seconds=60, max_instances=1)
+        # scheduler.add_job(weather_tracking_schedule, 'interval', seconds=60, max_instances=1)
         scheduler.add_job(verify_hdd_health, 'interval', hours=24, max_instances=1)
         # scheduler.add_job(generate_timeline_by_folder, 'interval', hours=24, max_instances=1, args=["/path/to/folder"])
         scheduler.start()
