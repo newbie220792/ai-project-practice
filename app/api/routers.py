@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from app import logger
 from app.services import face_recognition_using_deep_face, post_data
 from app.services.send_email_service import send_email
+from app.services.send_telegram_message import sendTelegramMessage
 
 bp = Blueprint("api", __name__)
 
@@ -33,6 +34,21 @@ def send_email_service():
     except Exception as e:
         logger.error(f"Error occurred while sending email: {e}")
         return jsonify({"error": str(e)}), 500      
+    except Exception as e:
+        logger.error(f"Error occurred while recognizing face: {e}")
+        return jsonify({"error": str(e)}), 500  
+
+
+@bp.route('/send-telegram', methods=['GET', 'POST'])
+def send_telegram_message():
+    data = request.json
+    message = data.get("message")
+    try:
+        sendTelegramMessage(message)
+        return jsonify({"message": "Telegram message sent successfully"})
+    except Exception as e:
+        logger.error(f"Error occurred while sending Telegram message: {e}")
+        return jsonify({"error": str(e)}), 500
     except Exception as e:
         logger.error(f"Error occurred while recognizing face: {e}")
         return jsonify({"error": str(e)}), 500  

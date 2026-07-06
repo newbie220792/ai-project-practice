@@ -7,6 +7,7 @@ import datetime
 import json
 from app.config import BLACKLIST_CAMERAS, IMAGE_SERVER_URL, OUTPUT_FOLDER,CAMERA_PASSWORD, CAMERA_USERNAME, WORKING_DIR
 import app.logger as logger
+from app.services.send_telegram_message import sendTelegramMessage
 from app.utils import _unix_to_iso_compact_tz
 import time
 
@@ -21,42 +22,44 @@ def post_data(data) -> jsonify:
         
         msgType = data.get("msgType");
         if msgType == "mobileDetect":
-            # time = _unix_to_iso_compact_tz(int(time), tz_offset_hours=7)  # Convert to ISO format with timezone offset  
             return jsonify({"status": "mobileDetect received, no image capture needed"}), 200
-        
-        alarmId= data.get("alarmId");
-        thumbUrl = data.get("thumbUrl");
-        time = data.get("time");
-        did = data.get("did");
+        elif msgType == "online" or msgType == "offline":
+            sendTelegramMessage(f"Camera {dname} is {msgType} at {_unix_to_iso_compact_tz(data.get('time'))}")
+            return jsonify({"status": f"{msgType} message received, no image capture needed"}), 200
+        else:
+            alarmId= data.get("alarmId");
+            thumbUrl = data.get("thumbUrl");
+            time = data.get("time");
+            did = data.get("did");
 
-        fileName = capture_image_from_camera(did)
+            fileName = capture_image_from_camera(did)
 
-        conn = initialize_mysql_connection()
-        if(conn is None):
-            logger.error("Failed to connect to MySQL database")
-            return jsonify({"error": "Failed to connect to MySQL database"}), 500
-        cur = conn.cursor()
-        
-        cur.execute(
-            "INSERT INTO imou_camera_log (alarm_id, dname, msg_type, thumb_url, data, created_at, device_id, img, person_name) " \
-                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-            (
-                alarmId,
-                dname,
-                msgType,
-                thumbUrl,
-                json.dumps(data),
-                time,
-                did,
-                f"{IMAGE_SERVER_URL}/{fileName}",
-                "Unknown"  # Placeholder for person_name, to be updated later after face recognition
+            conn = initialize_mysql_connection()
+            if(conn is None):
+                logger.error("Failed to connect to MySQL database")
+                return jsonify({"error": "Failed to connect to MySQL database"}), 500
+            cur = conn.cursor()
+            
+            cur.execute(
+                "INSERT INTO imou_camera_log (alarm_id, dname, msg_type, thumb_url, data, created_at, device_id, img, person_name) " \
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                (
+                    alarmId,
+                    dname,
+                    msgType,
+                    thumbUrl,
+                    json.dumps(data),
+                    time,
+                    did,
+                    f"{IMAGE_SERVER_URL}/{fileName}",
+                    "Unknown"  # Placeholder for person_name, to be updated later after face recognition
+                )
             )
-        )
-        
-        conn.commit()
-        cur.close()
-        conn.close()
-        return jsonify({"status": "saved"}), 200
+            
+            conn.commit()
+            cur.close()
+            conn.close()
+            return jsonify({"status": "saved"}), 200
     except Exception as e:
         logger.error(f"Error saving data: {str(e)} with data: {data}")  # Log the error message
         return jsonify({"error": str(e)}), 500
