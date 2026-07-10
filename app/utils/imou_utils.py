@@ -10,14 +10,14 @@ def _mask_string(value, visible_chars=4):
     return "*" * (len(value) - visible_chars) + value[-visible_chars:]
 
 def decrypt(encryptedValue):
-    salt = os.getenv("DECRYPT_SALT", "default_salt")
+    salt = os.getenv("SALT", "default_salt")
     decrypted_bytes = base64.b64decode(encryptedValue.encode())
     cipher = Fernet(base64.urlsafe_b64encode(salt.encode().ljust(32)[:32]))
     return cipher.decrypt(decrypted_bytes).decode()
 
 
 def encrypt(plainValue):
-    salt = os.getenv("DECRYPT_SALT", "default_salt")
+    salt = os.getenv("SALT", "default_salt")
     cipher = Fernet(base64.urlsafe_b64encode(salt.encode().ljust(32)[:32]))
     encrypted_bytes = cipher.encrypt(plainValue.encode())
     return base64.b64encode(encrypted_bytes).decode()

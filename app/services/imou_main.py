@@ -14,6 +14,26 @@ import time
 import face_recognition
 
 def post_data(data) -> jsonify:
+    dname= data.get("dname");
+    if dname is not None: 
+        return processCameraCallback(data)
+    else:
+        # TODO: Handle other callback from Telegram
+        return processTelegramCallback(data)
+
+def processTelegramCallback(data) -> jsonify:
+    try:
+        message = data.get("message")
+        if message:
+            sendTelegramMessage(message)
+            return jsonify({"status": "Telegram message sent successfully"}), 200
+        else:
+            return jsonify({"error": "No message provided"}), 400
+    except Exception as e:
+        logger.error(f"Error processing Telegram callback: {str(e)} with data: {data}")
+        return jsonify({"error": str(e)}), 500
+
+def processCameraCallback(data) -> jsonify:
     try:
         dname= data.get("dname");
         if dname in BLACKLIST_CAMERAS:
