@@ -22,30 +22,46 @@ def post_data(data) -> jsonify:
         return processTelegramCallback(data)
 
 def processTelegramCallback(data) -> jsonify:
+    conn = initialize_mysql_connection()
+    if(conn is None):
+        logger.error("Failed to connect to MySQL database")
+        return jsonify({"error": "Failed to connect to MySQL database"}), 500
+    cur = conn.cursor()
     try:
-        message = data.get("message")
-        if message:
-            sendTelegramMessage(message)
-            return jsonify({"status": "Telegram message sent successfully"}), 200
-        else:
-            return jsonify({"error": "No message provided"}), 400
+       cur.execute("INSERT INTO telegram_callback (callback_body) VALUES (%s)",(json.dumps(data)))
     except Exception as e:
         logger.error(f"Error processing Telegram callback: {str(e)} with data: {data}")
         return jsonify({"error": str(e)}), 500
+    finally:
+        conn.commit()
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 def processCameraCallback(data) -> jsonify:
-    try:
+    conn = initialize_mysql_connection()
+    if(conn is None):
+        logger.error("Failed to connect to MySQL database")
+        return jsonify({"error": "Failed to connect to MySQL database"}), 500
+    cur = conn.cursor()
+
+    try: 
+        msgType = data.get("msgType");
         dname= data.get("dname");
+        cur.execute("INSERT INTO imou_camera_callback (callback_body,msg_type) VALUES (%s,%s)",(json.dumps(data), msgType))
+       
+        if msgType == "mobileDetect":
+            return jsonify({"status": "mobileDetect received, no image capture needed"}), 200
+        elif msgType == "online" or msgType == "offline":
+            logger.info(f"Camera {dname} is {msgType} at {_unix_to_iso_compact_tz(data.get('time'))}")
+            # sendTelegramMessage(f"Camera {dname} is {msgType} at {_unix_to_iso_compact_tz(data.get('time'))}")
+            return jsonify({"status": f"{msgType} message received, no image capture needed"}), 200
+        
         if dname in BLACKLIST_CAMERAS:
             logger.warning(f"Camera {dname} is blacklisted. Skipping save.")
             return jsonify({"status": f"Camera '{dname}' is blacklisted. Skipping save."}), 200
         
-        msgType = data.get("msgType");
-        if msgType == "mobileDetect":
-            return jsonify({"status": "mobileDetect received, no image capture needed"}), 200
-        elif msgType == "online" or msgType == "offline":
-            sendTelegramMessage(f"Camera {dname} is {msgType} at {_unix_to_iso_compact_tz(data.get('time'))}")
-            return jsonify({"status": f"{msgType} message received, no image capture needed"}), 200
         else:
             alarmId= data.get("alarmId");
             thumbUrl = data.get("thumbUrl");
@@ -53,12 +69,6 @@ def processCameraCallback(data) -> jsonify:
             did = data.get("did");
 
             fileName = capture_image_from_camera(did)
-
-            conn = initialize_mysql_connection()
-            if(conn is None):
-                logger.error("Failed to connect to MySQL database")
-                return jsonify({"error": "Failed to connect to MySQL database"}), 500
-            cur = conn.cursor()
             
             cur.execute(
                 "INSERT INTO imou_camera_log (alarm_id, dname, msg_type, thumb_url, data, created_at, device_id, img, person_name) " \
@@ -76,13 +86,17 @@ def processCameraCallback(data) -> jsonify:
                 )
             )
             
-            conn.commit()
-            cur.close()
-            conn.close()
             return jsonify({"status": "saved"}), 200
+        
     except Exception as e:
         logger.error(f"Error saving data: {str(e)} with data: {data}")  # Log the error message
         return jsonify({"error": str(e)}), 500
+    finally:
+        conn.commit()
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
 
 def capture_image_from_camera(camera_id) -> str:
     # Define IP mapping for different cameras
